@@ -17,7 +17,7 @@ class BaseClient(object):
         self.session = requests.Session()
         self.session.auth = HTTPBasicAuth(
             settings['app_id'],
-            settings['app_key'])
+            settings['app_password'])
         self.session.headers.update({
             'Content-Type': 'application/json'
         })
@@ -29,7 +29,7 @@ class BaseClient(object):
 
     def _request(self, method, path, *args, **kwargs):
         url = self._make_url(path)
-        resp = requests.request(method, url, *args, **kwargs)
+        resp = self.session.request(method, url, *args, **kwargs)
 
         if resp.status_code not in (200, 201, 204):
             raise ClientException('HTTP %s: %s' %
@@ -56,4 +56,4 @@ class UserClient(BaseClient):
         return self.get('%s' % user_id)
 
     def save_user(self, user_id, app_data):
-        self.post('%s' % user_id, data=app_data)
+        return self.post('%s' % user_id, data=app_data)
