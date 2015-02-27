@@ -25,15 +25,6 @@ class UserSchemaTestCase(TestCase):
             with self.assertRaises(colander.Invalid):
                 self.schema.deserialize(incomplete_data)
 
-        complete_user_data = MINIMAL_USER_DATA.copy()
-        complete_user_data.update({
-            'msisdn': '1234567890',
-            'email': 'foo@foo.com'
-        })
-        complete_user_data = self.schema.deserialize(complete_user_data)
-        for field in ('msisdn', 'email'):
-            self.assertIn(field, complete_user_data)
-
     def test_app_data_validation(self):
         user_data = MINIMAL_USER_DATA.copy()
         app_data = {

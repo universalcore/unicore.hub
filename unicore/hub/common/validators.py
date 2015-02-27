@@ -1,14 +1,8 @@
 import colander
 
 
-email_validator = colander.Email()
-
-
-def msisdn_validator(node, value):
-    pass  # TODO - must raise colander.Invalid
-
-
 def username_validator(node, value):
+    # http://stackoverflow.com/questions/1597743/what-restrictions-should-i-impose-on-usernames
     pass  # TODO - must raise colander.Invalid
 
 
