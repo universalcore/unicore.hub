@@ -9,14 +9,14 @@ def username_validator(node, value):
 def app_data_validator(node, value):
     if not isinstance(value, dict):
         raise colander.Invalid(node,
-                               '%(v)r is not a dictionary' % {'v': value})
+                               '%r is not a dictionary' % (value, ))
 
     for key in value.keys():
         if not isinstance(key, int) or key < 0:
             raise colander.Invalid(node,
-                                   '%(v)r is not a valid app ID' % {'v': key})
+                                   '%r is not a valid app ID' % (key, ))
 
     for data in value.values():
         if not isinstance(data, dict):
             raise colander.Invalid(node,
-                                   '%(v)r is not a dictionary' % {'v': data})
+                                   '%r is not a dictionary' % (data, ))
