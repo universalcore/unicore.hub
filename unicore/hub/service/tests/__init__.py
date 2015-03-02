@@ -1,3 +1,4 @@
+import base64
 import os
 from ConfigParser import ConfigParser
 from unittest import TestCase
@@ -10,10 +11,12 @@ from unicore.hub.service import main
 from unicore.hub.service.models import App, User
 
 
+config_file_path = os.path.join(os.path.dirname(__file__), 'test.ini')
+
+
 def get_test_settings():
     here = os.path.dirname(__file__)
     config = ConfigParser()
-    config_file_path = os.path.join(os.path.dirname(__file__), 'test.ini')
     config.read(config_file_path)
     settings = dict(config.items('app:unicore.hub.service',
                                  vars={'here': here}))
@@ -21,9 +24,9 @@ def get_test_settings():
 
 
 def get_alembic_config(url, alembic_dir):
-    config = Config()
+    config = Config(os.path.join(alembic_dir, '../../../../alembic.ini'))
     config.set_main_option('script_location', alembic_dir)
-    config.set_main_option('url', url)
+    config.set_main_option('pyramid_config_file', config_file_path)
     return config
 
 
@@ -54,8 +57,13 @@ class BaseTestCase(TestCase):
     def create_app(self, session=None, **attrs):
         return self.create_model_object(App, session, **attrs)
 
+    def get_basic_auth_header(self, username, password):
+        encoded = base64.encodestring('%s:%s' % (username, password)) \
+                        .replace('\n', '')
+        return {'Authorization': 'Basic %s' % encoded}
 
-class DBTestCase(TestCase):
+
+class DBTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -68,7 +76,7 @@ class DBTestCase(TestCase):
             working_dir=working_dir,
             config_file_path=config_file_path,
             settings=settings)
-        cls.sessionmaker = cls.app.registry.dbmaker
+        cls.sessionmaker = cls.app.app.registry.dbmaker
 
         # migrate the database
         cls.alembic_config = get_alembic_config(
@@ -80,4 +88,9 @@ class DBTestCase(TestCase):
     def tearDownClass(cls):
         alembic_command.downgrade(cls.alembic_config, 'base')
 
-    # TODO - transactions per test
+    def setUp(self):
+        self.db = self.__class__.sessionmaker()
+
+    def tearDown(self):
+        self.db.rollback()
+        self.db.close()
