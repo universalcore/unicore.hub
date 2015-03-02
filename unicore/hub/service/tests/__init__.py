@@ -23,7 +23,7 @@ def get_test_settings():
     return (here, config_file_path, settings)
 
 
-def get_alembic_config(url, alembic_dir):
+def get_alembic_config(alembic_dir):
     config = Config(os.path.join(alembic_dir, '../../../../alembic.ini'))
     config.set_main_option('script_location', alembic_dir)
     config.set_main_option('pyramid_config_file', config_file_path)
@@ -80,7 +80,6 @@ class DBTestCase(BaseTestCase):
 
         # migrate the database
         cls.alembic_config = get_alembic_config(
-            url=cls.settings['sqlalchemy.url'],
             alembic_dir=os.path.join(working_dir, '../alembic'))
         alembic_command.upgrade(cls.alembic_config, 'head')
 

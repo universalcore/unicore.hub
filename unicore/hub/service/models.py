@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, Unicode
 from sqlalchemy_utils import PasswordType, JSONType
+from sqlalchemy.ext.mutable import MutableDict
 
 from unicore.hub.service import Base
 
@@ -9,7 +10,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     username = Column(Unicode(255), unique=True)
     password = Column(PasswordType(schemes=['pbkdf2_sha256']))
-    app_data = Column(JSONType)
+    app_data = Column(MutableDict.as_mutable(JSONType))
 
     @classmethod
     def authenticate(cls, username, password, request):
