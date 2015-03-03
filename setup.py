@@ -32,4 +32,8 @@ setup(name='unicore.hub',
       zip_safe=False,
       namespace_packages=['unicore'],
       install_requires=requires,
-      tests_require=requires)
+      tests_require=requires,
+      entry_points="""\
+      [paste.app_factory]
+      main = unicore.hub.service:main
+      """)
