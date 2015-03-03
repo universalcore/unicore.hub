@@ -14,12 +14,13 @@ user_app_data = Service(
 
 
 def get_authenticated_app_object(request):
-    try:
-        [app_id] = request.authenticated_userid
-    except TypeError:
+    [slug] = (request.authenticated_userid, )
+    if slug is None:
         raise HTTPUnauthorized()
 
-    return request.db.query(App).get(app_id)
+    return request.db.query(App) \
+        .filter(App.slug == slug) \
+        .one()
 
 
 def get_user_object(request):
@@ -37,7 +38,7 @@ def get_user(request):
     app = get_authenticated_app_object(request)
     user = get_user_object(request)
     app_data = user.app_data or {}
-    key = str(app.id)
+    key = app.slug
     return app_data.get(key, {})
 
 
@@ -46,9 +47,7 @@ def save_user(request):
     app = get_authenticated_app_object(request)
     user = get_user_object(request)
 
-    # NB: always convert key to string because JSONType field
-    # converts integer key to string for some databases
-    key = str(app.id)
+    key = app.slug
     if isinstance(user.app_data, dict):
         user.app_data[key] = request.json_body
     else:
