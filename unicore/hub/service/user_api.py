@@ -1,5 +1,4 @@
 from pyramid.exceptions import NotFound
-from pyramid.httpexceptions import HTTPUnauthorized
 
 from cornice import Service
 
@@ -11,15 +10,6 @@ user_app_data = Service(
     path='/users/{user_id}',
     description='This service can be used to retrieve '
                 'and update user data on a per app basis')
-
-
-def get_authenticated_app_object(request):
-    try:
-        [app_id] = request.authenticated_userid
-    except TypeError:
-        raise HTTPUnauthorized()
-
-    return request.db.query(App).get(app_id)
 
 
 def get_user_object(request):
@@ -34,16 +24,16 @@ def get_user_object(request):
 
 @user_app_data.get()
 def get_user(request):
-    app = get_authenticated_app_object(request)
+    app = App.get_authenticated_object(request)
     user = get_user_object(request)
     app_data = user.app_data or {}
     key = str(app.id)
     return app_data.get(key, {})
 
 
-@user_app_data.post()
+@user_app_data.post()  # TODO: this should be PUT
 def save_user(request):
-    app = get_authenticated_app_object(request)
+    app = App.get_authenticated_object(request)
     user = get_user_object(request)
 
     # NB: always convert key to string because JSONType field

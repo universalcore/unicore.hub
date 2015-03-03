@@ -1,3 +1,4 @@
+from pyramid.httpexceptions import HTTPUnauthorized
 from sqlalchemy import Column, Integer, Unicode
 from sqlalchemy_utils import PasswordType, JSONType
 from sqlalchemy.ext.mutable import MutableDict
@@ -37,3 +38,12 @@ class App(Base):
             return (app_id, )
 
         return None
+
+    @classmethod
+    def get_authenticated_object(cls, request):
+        try:
+            [app_id] = request.authenticated_userid
+        except TypeError:
+            raise HTTPUnauthorized()
+
+        return request.db.query(cls).get(app_id)
