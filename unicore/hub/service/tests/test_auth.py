@@ -15,13 +15,13 @@ class AuthTestCase(DBTestCase):
 
         # not authenticated
         self.assertEqual(requestUser().status_int, 401)
-        self.assertEqual(requestUser((1, 'password')).status_int, 401)
-        self.create_app(self.db, id=1, password='password')
+        self.assertEqual(requestUser(('foo', 'password')).status_int, 401)
+        app = self.create_app(self.db, title='foo', password='password')
         self.db.commit()
-        self.assertEqual(requestUser((1, 'password2')).status_int, 401)
+        self.assertEqual(requestUser((app.slug, 'password2')).status_int, 401)
 
         # authenticated (user doesn't exist)
-        self.assertEqual(requestUser((1, 'password')).status_int, 404)
+        self.assertEqual(requestUser((app.slug, 'password')).status_int, 404)
 
     def test_user_authentication(self):
         pass  # TODO

@@ -1,13 +1,13 @@
-"""initial User and App tables
+"""initial App and User tables
 
-Revision ID: 533758dff4d8
+Revision ID: 37312eddf0a9
 Revises: 
-Create Date: 2015-03-03 22:34:58.113958
+Create Date: 2015-03-04 12:17:25.599166
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '533758dff4d8'
+revision = '37312eddf0a9'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -29,9 +29,12 @@ def upgrade():
     )
     op.create_table('apps',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('password', sqlalchemy_utils.types.password.PasswordType(max_length=1094), nullable=True),
+    sa.Column('title', sa.Unicode(length=255), nullable=False),
+    sa.Column('slug', sa.Unicode(length=255), nullable=False),
+    sa.Column('password', sqlalchemy_utils.types.password.PasswordType(max_length=1094), nullable=False),
     sa.Column('groups', sqlalchemy_utils.types.scalar_list.ScalarListType(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('slug')
     )
     ### end Alembic commands ###
 
