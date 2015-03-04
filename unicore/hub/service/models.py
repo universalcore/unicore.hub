@@ -77,6 +77,7 @@ class App(Base):
             .filter(App.slug == slug) \
             .one()
 
+    @property
     def __acl__(self):
         return [
             (Allow, self.id, App.permissions_basic),

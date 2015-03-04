@@ -10,6 +10,7 @@ WebTest==2.0.18
 alembic==0.7.4
 argparse==1.2.1
 beautifulsoup4==4.3.2
+click==3.3
 colander==1.0
 cornice==0.18.1
 iso8601==0.1.10

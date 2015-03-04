@@ -37,7 +37,8 @@ def get_app_object(request):
 
 @app_creation.post(permission='create_app')
 def create_app(request):
-    app = get_app_object(request)
+    app = App()
+    request.db.add(app)
     valid_data = AppSchema().deserialize(request.json_body)
     for attr, value in valid_data.iteritems():
         setattr(app, attr, value)
