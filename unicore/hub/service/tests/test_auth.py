@@ -23,5 +23,8 @@ class AuthTestCase(DBTestCase):
         # authenticated (user doesn't exist)
         self.assertEqual(requestUser((app.slug, 'password')).status_int, 404)
 
+    def test_app_authorization(self):
+        pass  # TODO
+
     def test_user_authentication(self):
         pass  # TODO

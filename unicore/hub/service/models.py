@@ -32,6 +32,13 @@ class User(Base):
 
         return None
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'app_data': self.app_data
+        }
+
 
 class App(Base):
     __tablename__ = 'apps'
@@ -96,6 +103,14 @@ class App(Base):
             break
 
         return self.slug
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'slug': self.slug,
+            'title': self.title,
+            'groups': self.groups
+        }
 
 
 @event.listens_for(Session, 'before_flush')
