@@ -9,7 +9,9 @@ from unicore.hub.service.schema import (User as UserSchema,
 MINIMAL_USER_DATA = {
     'username': 'foo',
     'password': '1234',
-    'app_data': {}
+}
+MINIMAL_APP_DATA = {
+    'title': 'Foo'
 }
 
 
@@ -20,7 +22,7 @@ class UserSchemaTestCase(TestCase):
         cls.schema = UserSchema()
 
     def test_field_existence(self):
-        for field in ('password', 'username'):
+        for field in MINIMAL_USER_DATA.keys():
             incomplete_data = MINIMAL_USER_DATA.copy()
             del incomplete_data[field]
             with self.assertRaises(colander.Invalid):
@@ -42,7 +44,7 @@ class UserSchemaTestCase(TestCase):
             with self.assertRaises(colander.Invalid):
                 self.schema.deserialize(user_data)
 
-    def test_pin_validator(self):
+    def test_pin_validation(self):
         user_data = MINIMAL_USER_DATA.copy()
 
         for invalid in (1, (), '123', '123a', '12345'):
@@ -60,11 +62,20 @@ class AppSchemaTestCase(TestCase):
     def setUpClass(cls):
         cls.schema = AppSchema()
 
-    def test_groups(self):
-        data = self.schema.deserialize({})
+    def test_field_existence(self):
+        for field in MINIMAL_APP_DATA.keys():
+            incomplete_data = MINIMAL_APP_DATA.copy()
+            del incomplete_data[field]
+            with self.assertRaises(colander.Invalid):
+                self.schema.deserialize(incomplete_data)
+
+    def test_groups_validation(self):
+        data = self.schema.deserialize(MINIMAL_APP_DATA)
         self.assertEqual(data['groups'], [])
 
-        data = self.schema.deserialize({'groups': ['group:apps_manager']})
+        data = MINIMAL_APP_DATA.copy()
+        data['groups'] = ['group:apps_manager']
+        data = self.schema.deserialize(data)
         self.assertEqual(data['groups'], ['group:apps_manager'])
 
         for invalid in (['groups:apps_manager', 'something_else'], [124]):
