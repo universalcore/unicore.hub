@@ -3,6 +3,7 @@ import os
 from ConfigParser import ConfigParser
 from unittest import TestCase
 
+from sqlalchemy import event
 from sqlalchemy.orm import sessionmaker
 from alembic import command as alembic_command
 from alembic.config import Config

@@ -1,5 +1,4 @@
 from pyramid.httpexceptions import HTTPUnauthorized
-from pyramid.security import Allow
 from sqlalchemy import Column, Integer, Unicode, event
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.mutable import MutableDict
@@ -47,8 +46,6 @@ class App(Base):
     all_groups = (
         'group:apps_manager',  # Can create, view and edit apps
     )
-    permissions_basic = ['view_app', 'edit_app']
-    permissions_advanced = ['create_app']
 
     id = Column(Integer, primary_key=True)
     title = Column(Unicode(255), nullable=False)
@@ -76,14 +73,6 @@ class App(Base):
         return request.db.query(App) \
             .filter(App.slug == slug) \
             .one()
-
-    @property
-    def __acl__(self):
-        return [
-            (Allow, self.id, App.permissions_basic),
-            (Allow, 'group:apps_manager',
-                App.permissions_basic + App.permissions_advanced)
-        ]
 
     def set_unique_slug(self, session, exclude=()):
         if self.title is None:
