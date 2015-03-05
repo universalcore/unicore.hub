@@ -16,8 +16,8 @@ def require_principal(request, principals):
 
 
 def get_app_object(request):
-    app_id = request.matchdict['app_id']
-    app = request.db.query(App).get(app_id)
+    uuid = request.matchdict['uuid']
+    app = request.db.query(App).get(uuid)
 
     if app is None:
         raise NotFound
@@ -25,7 +25,7 @@ def get_app_object(request):
     return app
 
 
-@resource(collection_path='/apps', path='/apps/{app_id:\d+}')
+@resource(collection_path='/apps', path='/apps/{uuid}')
 class AppResource(object):
 
     def __init__(self, request):
@@ -44,7 +44,7 @@ class AppResource(object):
 
         password = utils.make_password(bit_length=15)
         app.password = password
-        self.request.db.flush()  # assigns primary key + slug
+        self.request.db.flush()  # assigns primary key
 
         new_data = app.to_dict()
         # the password cannot be retrieved after creation
@@ -56,7 +56,7 @@ class AppResource(object):
     def get(self):
         require_principal(
             self.request,
-            ['group:apps_manager', int(self.request.matchdict['app_id'])])
+            ['group:apps_manager', self.request.matchdict['uuid']])
 
         app = get_app_object(self.request)
         return app.to_dict()
@@ -65,7 +65,7 @@ class AppResource(object):
     def put(self):
         require_principal(
             self.request,
-            ['group:apps_manager', int(self.request.matchdict['app_id'])])
+            ['group:apps_manager', self.request.matchdict['uuid']])
 
         app = get_app_object(self.request)
         valid_data = AppSchema().deserialize(self.request.json_body)
@@ -86,7 +86,7 @@ class AppResource(object):
 
 app_password_reset = Service(
     name='apps-password-reset',
-    path='/apps/{app_id:\d+}/reset_password',
+    path='/apps/{uuid}/reset_password',
     description='This service can be used by admin apps to '
                 'reset an app\'s password')
 
@@ -95,7 +95,7 @@ app_password_reset = Service(
 def reset_password(request):
     App.get_authenticated_object(request)
     require_principal(
-        request, ['group:apps_manager', int(request.matchdict['app_id'])])
+        request, ['group:apps_manager', request.matchdict['uuid']])
 
     app = get_app_object(request)
     password = utils.make_password(bit_length=15)
