@@ -39,7 +39,8 @@ class AppApiTestCase(DBTestCase):
         # change group
         resp = self.app.put_json(
             '/apps/%s' % self.user_app.uuid,
-            headers=self.get_basic_auth_header(self.manager_app.uuid, 'password'),
+            headers=self.get_basic_auth_header(
+                self.manager_app.uuid, 'password'),
             params={'title': 'foo', 'groups': ['group:apps_manager']})
         self.db.expire_all()
         new_user_app = self.db.query(App).get(self.user_app.uuid)
@@ -51,7 +52,8 @@ class AppApiTestCase(DBTestCase):
         data = {'title': 'foobar', 'groups': ['group:apps_manager']}
         resp = self.app.post_json(
             '/apps',
-            headers=self.get_basic_auth_header(self.manager_app.uuid, 'password'),
+            headers=self.get_basic_auth_header(
+                self.manager_app.uuid, 'password'),
             params=data)
         self.assertEqual(resp.json_body['title'], data['title'])
         self.assertEqual(resp.json_body['groups'], data['groups'])

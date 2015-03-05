@@ -45,7 +45,8 @@ class AuthTestCase(DBTestCase):
         return getattr(self.app, method)(path, expect_errors=True, **extra)
 
     def request_user(self, credentials=None, method='get', **extra):
-        return self._api_request('/users/%s' % uuid_hex, credentials, method, extra).status_int
+        return self._api_request(
+            '/users/%s' % uuid_hex, credentials, method, extra).status_int
 
     def request_app(self, path, credentials=None, method='get', **extra):
         return self._api_request(path, credentials, method, extra).status_int
@@ -61,9 +62,10 @@ class AuthTestCase(DBTestCase):
         # not authenticated - app API
         self.assertEqual(self.request_app('/apps', method='post'), 401)
         self.assertEqual(self.request_app('/apps/%s' % uuid_hex), 401)
-        self.assertEqual(self.request_app('/apps/%s' % uuid_hex, method='put'), 401)
-        self.assertEqual(
-            self.request_app('/apps/%s/reset_password' % uuid_hex, method='put'), 401)
+        self.assertEqual(self.request_app(
+            '/apps/%s' % uuid_hex, method='put'), 401)
+        self.assertEqual(self.request_app(
+            '/apps/%s/reset_password' % uuid_hex, method='put'), 401)
 
         # authenticated (user doesn't exist)
         self.assertEqual(self.request_user((app.uuid, 'password')), 404)
