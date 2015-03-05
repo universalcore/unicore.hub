@@ -3,9 +3,12 @@ import os
 from ConfigParser import ConfigParser
 from unittest import TestCase
 
+from sqlalchemy import event
+from sqlalchemy.orm import sessionmaker
 from alembic import command as alembic_command
 from alembic.config import Config
 from webtest import TestApp
+from mock import patch
 
 from unicore.hub.service import main
 from unicore.hub.service.models import App, User
@@ -67,6 +70,16 @@ class DBTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
+        # bind sessions to single database connection
+        def sessionmaker_in_transaction(bind):
+            cls.connection = bind.connect()
+            return sessionmaker(bind=cls.connection)
+
+        cls.transaction_context = patch(
+            'unicore.hub.service.sessionmaker',
+            new=sessionmaker_in_transaction)
+        cls.transaction_context.__enter__()
+
         # set up app
         working_dir, config_file_path, settings = get_test_settings()
         cls.working_dir = working_dir
@@ -86,10 +99,13 @@ class DBTestCase(BaseTestCase):
     @classmethod
     def tearDownClass(cls):
         alembic_command.downgrade(cls.alembic_config, 'base')
+        cls.connection.close()
+        cls.transaction_context.__exit__(None, None, None)
 
     def setUp(self):
+        self.transaction = self.__class__.connection.begin()
         self.db = self.__class__.sessionmaker()
 
     def tearDown(self):
-        self.db.rollback()
         self.db.close()
+        self.transaction.rollback()

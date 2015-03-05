@@ -36,4 +36,6 @@ setup(name='unicore.hub',
       entry_points="""\
       [paste.app_factory]
       main = unicore.hub.service:main
+      [console_scripts]
+      hubservice=unicore.hub.service.commands:in_app_env
       """)

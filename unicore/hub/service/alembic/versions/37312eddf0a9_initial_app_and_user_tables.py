@@ -1,13 +1,13 @@
 """initial App and User tables
 
-Revision ID: 3b7291887ed5
+Revision ID: 37312eddf0a9
 Revises: 
-Create Date: 2015-03-03 09:05:39.908876
+Create Date: 2015-03-04 12:17:25.599166
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '3b7291887ed5'
+revision = '37312eddf0a9'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -32,6 +32,7 @@ def upgrade():
     sa.Column('title', sa.Unicode(length=255), nullable=False),
     sa.Column('slug', sa.Unicode(length=255), nullable=False),
     sa.Column('password', sqlalchemy_utils.types.password.PasswordType(max_length=1094), nullable=False),
+    sa.Column('groups', sqlalchemy_utils.types.scalar_list.ScalarListType(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('slug')
     )

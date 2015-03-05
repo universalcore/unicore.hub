@@ -1,7 +1,8 @@
+from pyramid.httpexceptions import HTTPUnauthorized
 from sqlalchemy import Column, Integer, Unicode, event
-from sqlalchemy_utils import PasswordType, JSONType
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy_utils import PasswordType, JSONType, ScalarListType
 
 from unicore.hub.service import Base
 from unicore.hub.service.utils import make_slugs
@@ -13,6 +14,7 @@ class ModelException(Exception):
 
 class User(Base):
     __tablename__ = 'users'
+
     id = Column(Integer, primary_key=True)
     username = Column(Unicode(255), unique=True)
     password = Column(PasswordType(schemes=['pbkdf2_sha256']))
@@ -29,13 +31,27 @@ class User(Base):
 
         return None
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'app_data': self.app_data
+        }
+
 
 class App(Base):
     __tablename__ = 'apps'
+
+    # TODO - extend to cover user api
+    all_groups = (
+        'group:apps_manager',  # Can create, view and edit apps
+    )
+
     id = Column(Integer, primary_key=True)
     title = Column(Unicode(255), nullable=False)
     slug = Column(Unicode(255), unique=True, nullable=False)
     password = Column(PasswordType(schemes=['pbkdf2_sha256']), nullable=False)
+    groups = Column(ScalarListType())
 
     @classmethod
     def authenticate(cls, slug, password, request):
@@ -44,9 +60,19 @@ class App(Base):
             .first()
 
         if app is not None and app.password == password:
-            return (app.id, )
+            return [app.id, ] + (app.groups or [])
 
         return None
+
+    @classmethod
+    def get_authenticated_object(cls, request):
+        [slug] = (request.authenticated_userid, )
+        if slug is None:
+            raise HTTPUnauthorized()
+
+        return request.db.query(App) \
+            .filter(App.slug == slug) \
+            .one()
 
     def set_unique_slug(self, session, exclude=()):
         if self.title is None:
@@ -67,6 +93,14 @@ class App(Base):
             break
 
         return self.slug
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'slug': self.slug,
+            'title': self.title,
+            'groups': self.groups
+        }
 
 
 @event.listens_for(Session, 'before_flush')
