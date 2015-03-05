@@ -41,7 +41,8 @@ class AuthTestCase(DBTestCase):
         return getattr(self.app, method)(path, expect_errors=True, **extra)
 
     def request_user(self, credentials=None, method='get', **extra):
-        return self._api_request('/users/1', credentials, method, extra).status_int
+        return self._api_request(
+            '/users/1', credentials, method, extra).status_int
 
     def request_app(self, path, credentials=None, method='get', **extra):
         return self._api_request(path, credentials, method, extra).status_int
