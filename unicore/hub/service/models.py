@@ -1,8 +1,8 @@
 from pyramid.httpexceptions import HTTPUnauthorized
-from sqlalchemy import Column, Integer, Unicode, event
+from sqlalchemy import Column, Unicode, event
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy_utils import PasswordType, JSONType, ScalarListType
+from sqlalchemy_utils import PasswordType, JSONType, ScalarListType, UUIDType
 
 from unicore.hub.service import Base
 from unicore.hub.service.utils import make_slugs
@@ -15,7 +15,7 @@ class ModelException(Exception):
 class User(Base):
     __tablename__ = 'users'
 
-    id = Column(Integer, primary_key=True)
+    uuid = Column(UUIDType(binary=False), primary_key=True)
     username = Column(Unicode(255), unique=True)
     password = Column(PasswordType(schemes=['pbkdf2_sha256']))
     app_data = Column(MutableDict.as_mutable(JSONType))
@@ -47,9 +47,8 @@ class App(Base):
         'group:apps_manager',  # Can create, view and edit apps
     )
 
-    id = Column(Integer, primary_key=True)
+    uuid = Column(UUIDType(binary=False), primary_key=True)
     title = Column(Unicode(255), nullable=False)
-    slug = Column(Unicode(255), unique=True, nullable=False)
     password = Column(PasswordType(schemes=['pbkdf2_sha256']), nullable=False)
     groups = Column(ScalarListType())
 
