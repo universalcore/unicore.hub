@@ -16,6 +16,7 @@ class UUIDMixin(object):
     @property
     def uuid(self):
         return self._uuid.hex
+
     @uuid.setter
     def uuid(self, value):
         if isinstance(value, UUID):
@@ -64,9 +65,6 @@ class App(Base, UUIDMixin):
 
     @classmethod
     def authenticate(cls, uuid, password, request):
-        #if not isinstance(uuid, UUID):
-        #    uuid = UUID(hex=uuid)
-
         app = request.db.query(cls).get(uuid)
 
         if app is not None and app.password == password:
