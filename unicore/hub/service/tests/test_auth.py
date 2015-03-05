@@ -1,6 +1,10 @@
 from mock import patch
+from uuid import uuid4
 
 from unicore.hub.service.tests import DBTestCase
+
+
+uuid_hex = uuid4().hex
 
 
 class AuthTestCase(DBTestCase):
@@ -42,7 +46,7 @@ class AuthTestCase(DBTestCase):
 
     def request_user(self, credentials=None, method='get', **extra):
         return self._api_request(
-            '/users/1', credentials, method, extra).status_int
+            '/users/%s' % uuid_hex, credentials, method, extra).status_int
 
     def request_app(self, path, credentials=None, method='get', **extra):
         return self._api_request(path, credentials, method, extra).status_int
@@ -50,20 +54,21 @@ class AuthTestCase(DBTestCase):
     def test_authentication(self):
         # not authenticated - user API
         self.assertEqual(self.request_user(), 401)
-        self.assertEqual(self.request_user(('foo', 'password')), 401)
+        self.assertEqual(self.request_user((uuid_hex, 'password')), 401)
         app = self.create_app(self.db, title='foo', password='password')
         self.db.commit()
-        self.assertEqual(self.request_user((app.slug, 'password2')), 401)
+        self.assertEqual(self.request_user((app.uuid, 'password2')), 401)
 
         # not authenticated - app API
         self.assertEqual(self.request_app('/apps', method='post'), 401)
-        self.assertEqual(self.request_app('/apps/1'), 401)
-        self.assertEqual(self.request_app('/apps/1', method='put'), 401)
-        self.assertEqual(
-            self.request_app('/apps/1/reset_password', method='put'), 401)
+        self.assertEqual(self.request_app('/apps/%s' % uuid_hex), 401)
+        self.assertEqual(self.request_app(
+            '/apps/%s' % uuid_hex, method='put'), 401)
+        self.assertEqual(self.request_app(
+            '/apps/%s/reset_password' % uuid_hex, method='put'), 401)
 
         # authenticated (user doesn't exist)
-        self.assertEqual(self.request_user((app.slug, 'password')), 404)
+        self.assertEqual(self.request_user((app.uuid, 'password')), 404)
 
     def test_app_api_authorization(self):
         # NOTE: this test is slooooowwww
@@ -72,28 +77,27 @@ class AuthTestCase(DBTestCase):
 
         # not authorized by virtue of not being in group:apps_manager
         self.assertEqual(self.request_app(
-            '/apps', (app.slug, 'password'), 'post'), 403)
+            '/apps', (app.uuid, 'password'), 'post'), 403)
         # not authorized by virtue of requesting app data other than its own
         self.assertEqual(self.request_app(
-            '/apps/%d' % (app.id + 1), (app.slug, 'password')), 403)
+            '/apps/%s' % uuid_hex, (app.uuid, 'password')), 403)
         self.assertEqual(self.request_app(
-            '/apps/%d' % (app.id + 1), (app.slug, 'password'), 'put'), 403)
+            '/apps/%s' % uuid_hex, (app.uuid, 'password'), 'put'), 403)
         self.assertEqual(self.request_app(
-            '/apps/%d/reset_password' % (app.id + 1),
-            (app.slug, 'password'), 'put'), 403)
+            '/apps/%s' % uuid_hex, (app.uuid, 'password'), 'put'), 403)
         # authorized by virtue of requesting its own data
         self.assertEqual(self.request_app(
-            '/apps/%d' % app.id, (app.slug, 'password')), 200)
+            '/apps/%s' % app.uuid, (app.uuid, 'password')), 200)
         self.assertEqual(self.request_app(
-            '/apps/%d' % app.id, (app.slug, 'password'), 'put_json',
+            '/apps/%s' % app.uuid, (app.uuid, 'password'), 'put_json',
             params={'title': 'foo2'}), 200)
         # not authorized by virtue of trying to change group
         self.assertEqual(self.request_app(
-            '/apps/%d' % app.id, (app.slug, 'password'), 'put_json',
+            '/apps/%s' % app.uuid, (app.uuid, 'password'), 'put_json',
             params={'title': 'foo2', 'groups': ['group:apps_manager']}), 403)
         self.assertEqual(self.request_app(
-            '/apps/%d/reset_password' % app.id,
-            (app.slug, 'password'), 'put'), 200)
+            '/apps/%s/reset_password' % app.uuid,
+            (app.uuid, 'password'), 'put'), 200)
 
         app2 = self.create_app(
             self.db, title='foo', password='password',
@@ -101,8 +105,7 @@ class AuthTestCase(DBTestCase):
         self.db.flush()
         # authorized by virtue of group group:apps_manager
         self.assertEqual(self.request_app(
-            '/apps', (app2.slug, 'password'), 'post_json',
+            '/apps', (app2.uuid, 'password'), 'post_json',
             params={'title': 'foo2'}), 201)
         self.assertIn(self.request_app(
-            '/apps/%d' % (app2.id + 1), (app2.slug, 'password')),
-            (404, 200))
+            '/apps/%s' % uuid_hex, (app2.uuid, 'password')), (404, 200))

@@ -27,7 +27,7 @@ def get_user(request):
     app = App.get_authenticated_object(request)
     user = get_user_object(request)
     app_data = user.app_data or {}
-    key = app.slug
+    key = app.uuid
     return app_data.get(key, {})
 
 
@@ -36,7 +36,7 @@ def save_user(request):
     app = App.get_authenticated_object(request)
     user = get_user_object(request)
 
-    key = app.slug
+    key = app.uuid
     if isinstance(user.app_data, dict):
         user.app_data[key] = request.json_body
     else:

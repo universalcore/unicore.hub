@@ -1,4 +1,5 @@
 from unittest import TestCase
+from uuid import uuid4
 
 import colander
 
@@ -30,8 +31,9 @@ class UserSchemaTestCase(TestCase):
 
     def test_app_data_validation(self):
         user_data = MINIMAL_USER_DATA.copy()
+        uuid = uuid4().hex
         app_data = {
-            5678: {
+            uuid: {
                 'display_name': 'foo'
             }
         }

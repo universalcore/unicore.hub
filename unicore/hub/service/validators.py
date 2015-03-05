@@ -12,9 +12,9 @@ def app_data_validator(node, value):
             node, '%r is not a dictionary' % (value, ))
 
     for key in value.keys():
-        if not isinstance(key, int) or key < 0:
+        if not isinstance(key, basestring) or len(key) != 32:
             raise colander.Invalid(
-                node, '%r is not a valid app ID' % (key, ))
+                node, '%r is not a valid app UUID' % (key, ))
 
     for data in value.values():
         if not isinstance(data, dict):
