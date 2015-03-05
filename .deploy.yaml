@@ -1,0 +1,8 @@
+name: unicorehub
+user: ubuntu
+buildscript: sideloader/deploy.sh
+postinstall: sideloader/postinstall.sh
+pip:
+ - gunicorn
+dependencies:
+ - python-yaml
