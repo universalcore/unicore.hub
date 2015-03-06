@@ -67,7 +67,7 @@ def main(global_config, **settings):
         realm='apps')
     ticket_authn_policy = AuthTktAuthenticationPolicy(
         secret=settings['pyramid.secret'],
-        callback=User.authenticate,
+        callback=User.verify_identifier,
         hashalg='sha512')
     authn_policy = PathAuthenticationPolicy(
         path_map=[(r'/sso/(login|logout|validate)', ticket_authn_policy)],

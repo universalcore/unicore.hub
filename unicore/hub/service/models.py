@@ -43,6 +43,15 @@ class User(Base, UUIDMixin):
 
         return None
 
+    @classmethod
+    def verify_identifier(cls, uuid, request):
+        user = request.db.query(cls).get(uuid)
+
+        if user is not None:
+            return (user.uuid, )
+
+        return None
+
     def to_dict(self):
         return {
             'uuid': self.uuid,
