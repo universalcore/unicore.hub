@@ -30,10 +30,12 @@ def main(global_config, **settings):
     """
     config = Configurator(settings=settings)
 
+    config.add_route('user-login', '/sso/login')
+    config.add_route('user-logout', '/sso/logout')
+    config.add_route('user-validate', '/sso/validate')
+    config.scan()
+
     # sqlalchemy setup
-    config.scan('%s.models' % __name__)
-    config.scan('%s.user_api' % __name__)
-    config.scan('%s.app_api' % __name__)
     engine = engine_from_config(settings)
     config.registry.dbmaker = sessionmaker(bind=engine)
     # NOTE: db session is tied to request lifespan
