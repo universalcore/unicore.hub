@@ -1,4 +1,5 @@
 from __future__ import with_statement
+import os
 from alembic import context
 from alembic.config import Config
 from sqlalchemy import engine_from_config, pool
@@ -7,7 +8,9 @@ from logging.config import fileConfig
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-pyramid_config_file = config.get_main_option('pyramid_config_file')
+pyramid_config_file = os.environ.get(
+    'PYRAMID_CONFIG_FILE',
+    config.get_main_option('pyramid_config_file'))
 pyramid_config = Config(pyramid_config_file)
 
 # Interpret the config file for Python logging.
