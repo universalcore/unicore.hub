@@ -4,4 +4,4 @@ alembic="${VENV}/bin/alembic"
 cd "${INSTALLDIR}/${REPO}/"
 
 $pip install -e "${INSTALLDIR}/${REPO}/"
-$alembic upgrade head
+PYRAMID_CONFIG_FILE="${INSTALLDIR}/${REPO}/production.ini" $alembic upgrade head
