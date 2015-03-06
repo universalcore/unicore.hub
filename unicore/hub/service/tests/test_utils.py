@@ -3,11 +3,14 @@ from unittest import TestCase
 
 from click.testing import CliRunner
 from mock import patch, Mock
+from pyramid.interfaces import IAuthenticationPolicy
+from pyramid.authentication import (BasicAuthAuthenticationPolicy,
+                                    AuthTktAuthenticationPolicy)
 
 from unicore.hub.service import utils
 from unicore.hub.service.commands import in_app_env
 from unicore.hub.service.models import App
-from unicore.hub.service.tests import DBTestCase
+from unicore.hub.service.tests import DBTestCase, get_test_settings, make_app
 
 
 class UtilsTestCase(TestCase):
@@ -16,6 +19,25 @@ class UtilsTestCase(TestCase):
         for l in range(1, 20):
             password = utils.make_password(bit_length=l)
             self.assertTrue(len(password) > l)
+
+    def test_active_authentication_policy(self):
+        app = make_app(*get_test_settings()).app
+        policy = app.registry.queryUtility(IAuthenticationPolicy)
+
+        self.assertTrue(isinstance(policy, utils.PathAuthenticationPolicy))
+
+        path_map = [
+            ('/sso/login', AuthTktAuthenticationPolicy),
+            ('/sso/logout', AuthTktAuthenticationPolicy),
+            ('/sso/validate', AuthTktAuthenticationPolicy),
+            ('/apps', BasicAuthAuthenticationPolicy),
+            ('/users', BasicAuthAuthenticationPolicy)]
+
+        for path, policy_class in path_map:
+            self.assertTrue(isinstance(
+                policy.get_active_policy(app.request_factory({
+                    'REQUEST_METHOD': 'GET', 'PATH_INFO': path})),
+                policy_class))
 
 
 class CommandTestCase(DBTestCase):
