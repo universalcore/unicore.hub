@@ -103,8 +103,7 @@ class CASViews(object):
 
         return make_redirect(route_name='user-login', request=self.request)
 
-    @view_config(
-        route_name='user-validate', renderer='text')
+    @view_config(route_name='user-validate', renderer='text')
     def validate(self):
         # service = self.request.matchdict.get('service', None)
         # ticket = self.request.matchdict.get('ticket', None)
