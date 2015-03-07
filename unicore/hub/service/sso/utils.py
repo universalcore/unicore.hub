@@ -15,6 +15,11 @@ def make_redirect(service=None, route_name=None, request=None, params={}):
     return HTTPFound(request.route_url(route_name))
 
 
+def make_ticket_and_redirect(service, user_id):
+    ticket = make_ticket(service, user_id)
+    return make_redirect(service, {'ticket': ticket})
+
+
 if __name__ == '__main__':
     assert make_redirect('http://domain.com/', {'param1': '1'}).location \
         == 'http://domain.com/?param1=1'
