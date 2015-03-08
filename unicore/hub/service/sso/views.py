@@ -7,13 +7,8 @@ from deform import Form, ValidationFailure
 from deform.widget import PasswordWidget
 
 from unicore.hub.service.models import User
-from unicore.hub.service.sso.utils import (make_redirect,
-                                           make_ticket_and_redirect)
-
-
-""" Using django-mama-cas as the reference implementation
-https://github.com/jbittel/django-mama-cas/blob/master/mama_cas/views.py
-"""
+from unicore.hub.service.sso.models import Ticket
+from unicore.hub.service.sso.utils import make_redirect
 
 
 _ = TranslationStringFactory(None)
@@ -85,12 +80,14 @@ class CASViews(BaseView):
 
         if gateway and service:
             if user_id:
-                return make_ticket_and_redirect(service, user_id)
+                ticket = Ticket.create_ticket(self.request)
+                return make_redirect(service, params={'ticket': ticket.ticket})
             return make_redirect(service)
 
         if user_id:
             if service:
-                return make_ticket_and_redirect(service, user_id)
+                ticket = Ticket.create_ticket(self.request)
+                return make_redirect(service, params={'ticket': ticket.ticket})
             return {'user': self.request.db.query(User).get(user_id)}
 
         return {'form': form.render()}
@@ -111,7 +108,9 @@ class CASViews(BaseView):
                 user_id = data['user_id']
                 remember(self.request, user_id)
                 if service:
-                    return make_ticket_and_redirect(service, user_id)
+                    ticket = Ticket.create_ticket(self.request)
+                    return make_redirect(
+                        service, params={'ticket': ticket.ticket})
                 return make_redirect(
                     route_name='user-login', request=self.request)
 

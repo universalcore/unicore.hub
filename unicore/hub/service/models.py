@@ -2,6 +2,7 @@ from uuid import uuid4, UUID
 
 from pyramid.httpexceptions import HTTPUnauthorized
 from sqlalchemy import Column, Unicode
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy_utils import PasswordType, JSONType, ScalarListType, UUIDType
 
@@ -31,6 +32,8 @@ class User(Base, UUIDMixin):
     username = Column(Unicode(255), unique=True)
     password = Column(PasswordType(schemes=['pbkdf2_sha256']))
     app_data = Column(MutableDict.as_mutable(JSONType))
+
+    tickets = relationship('Ticket', backref='user')
 
     @classmethod
     def authenticate(cls, username, password, request):

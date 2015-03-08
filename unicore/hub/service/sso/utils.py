@@ -1,11 +1,26 @@
-from urlparse import urljoin
+from urlparse import urljoin, urlparse
 from urllib import urlencode
 
 from pyramid.httpexceptions import HTTPFound
 
 
-def make_ticket(service, user_id):
-    return 'this_is_a_ticket'  # TODO: need to store tickets
+PROTOCOL_TO_PORT = {
+    'http': 80,
+    'https': 443,
+}
+
+
+def same_origin(url1, url2):
+    ''' Copied from Django
+    https://github.com/django/django/blob/master/django/utils/http.py#L255
+    '''
+    p1, p2 = urlparse(url1), urlparse(url2)
+    try:
+        o1 = (p1.scheme, p1.hostname, p1.port or PROTOCOL_TO_PORT[p1.scheme])
+        o2 = (p2.scheme, p2.hostname, p2.port or PROTOCOL_TO_PORT[p2.scheme])
+        return o1 == o2
+    except (ValueError, KeyError):
+        return False
 
 
 def make_redirect(service=None, route_name=None, request=None, params={}):
@@ -13,16 +28,3 @@ def make_redirect(service=None, route_name=None, request=None, params={}):
         location = urljoin(service, '?%s' % urlencode(params))
         return HTTPFound(location=location)
     return HTTPFound(request.route_url(route_name))
-
-
-def make_ticket_and_redirect(service, user_id):
-    ticket = make_ticket(service, user_id)
-    return make_redirect(service, {'ticket': ticket})
-
-
-if __name__ == '__main__':
-    assert make_redirect('http://domain.com/', {'param1': '1'}).location \
-        == 'http://domain.com/?param1=1'
-    from uuid import uuid4
-    user_id = uuid4().hex
-    assert make_ticket('http://domain.com/', user_id) == 'this_is_a_ticket'
