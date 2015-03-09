@@ -1,5 +1,9 @@
+from urllib import urlencode
+from urlparse import urljoin
+
 from pyramid.view import view_config, view_defaults
 from pyramid.security import forget, remember
+from pyramid.httpexceptions import HTTPFound
 from pyramid.i18n import TranslationStringFactory, get_locale_name
 
 import colander
@@ -8,7 +12,6 @@ from deform.widget import PasswordWidget
 
 from unicore.hub.service.models import User
 from unicore.hub.service.sso.models import Ticket
-from unicore.hub.service.sso.utils import make_redirect
 
 
 _ = TranslationStringFactory(None)
@@ -34,7 +37,7 @@ def validate_credentials(request):
         if not user_id:
             raise colander.Invalid(
                 form, _('Username or password is incorrect'))
-        values['user_id'] = user_id
+        values['user_id'] = user_id[0]
 
     return validator
 
@@ -58,6 +61,19 @@ class BaseView(object):
         else:
             return "ltr"
 
+    def make_redirect(self, url=None, route_name=None, params={}):
+        cookies = filter(
+            lambda t: t[0] == 'Set-Cookie',
+            self.request.response.headerlist)
+
+        if url:
+            location = urljoin(url, '?%s' % urlencode(params))
+        else:
+            location = self.request.route_url(route_name)
+
+        resp = HTTPFound(location, headers=cookies)
+        return resp
+
 
 @view_defaults(http_cache=0, request_method='GET')
 class CASViews(BaseView):
@@ -80,14 +96,16 @@ class CASViews(BaseView):
 
         if gateway and service:
             if user_id:
-                ticket = Ticket.create_ticket(self.request)
-                return make_redirect(service, params={'ticket': ticket.ticket})
-            return make_redirect(service)
+                ticket = Ticket.create_ticket_from_request(self.request)
+                return self.make_redirect(
+                    service, params={'ticket': ticket.ticket})
+            return self.make_redirect(service)
 
         if user_id:
             if service:
-                ticket = Ticket.create_ticket(self.request)
-                return make_redirect(service, params={'ticket': ticket.ticket})
+                ticket = Ticket.create_ticket_from_request(self.request)
+                return self.make_redirect(
+                    service, params={'ticket': ticket.ticket})
             return {'user': self.request.db.query(User).get(user_id)}
 
         return {'form': form.render()}
@@ -106,13 +124,13 @@ class CASViews(BaseView):
             try:
                 data = form.validate(data)
                 user_id = data['user_id']
-                remember(self.request, user_id)
+                headers = remember(self.request, user_id)
+                self.request.response.headerlist.extend(headers)
                 if service:
-                    ticket = Ticket.create_ticket(self.request)
-                    return make_redirect(
+                    ticket = Ticket.create_ticket_from_request(self.request)
+                    return self.make_redirect(
                         service, params={'ticket': ticket.ticket})
-                return make_redirect(
-                    route_name='user-login', request=self.request)
+                return self.make_redirect(route_name='user-login')
 
             except ValidationFailure as e:
                 return {'form': e.render()}
@@ -122,12 +140,13 @@ class CASViews(BaseView):
     @view_config(route_name='user-logout')
     def logout(self):
         service = self.request.matchdict.get('service', None)
-        forget(self.request)
+        headers = forget(self.request)
+        self.request.response.headerlist.extend(headers)
 
         if service:
-            return make_redirect(service)
+            return self.make_redirect(service)
 
-        return make_redirect(route_name='user-login', request=self.request)
+        return self.make_redirect(route_name='user-login')
 
     @view_config(route_name='user-validate', renderer='text')
     def validate(self):

@@ -54,25 +54,28 @@ class Ticket(Base):
     primary = Column(Boolean, nullable=False, default=False)
 
     @classmethod
-    def create_ticket(cls, request):
+    def create_ticket_from_request(cls, request, **attrs):
         ticket = Ticket()
-        ticket.user_id = request.authenticated_userid
+        [ticket.user_id] = request.authenticated_userid
         ticket.service = request.matchdict['service']
-        # TODO: set other ticket attributes
+        for attr, value in attrs.iteritems():
+            setattr(ticket, attr, value)
+
         request.db.add(ticket)
         return ticket
 
     def consume(self, request):
         self.consumed = datetime.utcnow()
-        request.db.commit()
+        request.db.flush()
 
     @classmethod
-    def consume_all(cls, user, request):
+    def consume_all(cls, user_id, request):
         now = datetime.utcnow()
-        user.tickets.update() \
-            .where(cls.expires > now) \
-            .values(consumed=now)
-        request.db.commit()
+        request.db.query(cls) \
+            .filter(cls.user_id == user_id) \
+            .filter(cls.expires > now) \
+            .update({'consumed': now})
+        request.db.flush()
 
     @property
     def is_consumed(self):

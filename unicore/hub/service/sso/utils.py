@@ -1,7 +1,4 @@
-from urlparse import urljoin, urlparse
-from urllib import urlencode
-
-from pyramid.httpexceptions import HTTPFound
+from urlparse import urlparse
 
 
 PROTOCOL_TO_PORT = {
@@ -21,10 +18,3 @@ def same_origin(url1, url2):
         return o1 == o2
     except (ValueError, KeyError):
         return False
-
-
-def make_redirect(service=None, route_name=None, request=None, params={}):
-    if service:
-        location = urljoin(service, '?%s' % urlencode(params))
-        return HTTPFound(location=location)
-    return HTTPFound(request.route_url(route_name))
