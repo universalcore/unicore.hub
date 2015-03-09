@@ -11,7 +11,7 @@ from deform import Form, ValidationFailure
 from deform.widget import PasswordWidget
 
 from unicore.hub.service.models import User
-from unicore.hub.service.sso.models import Ticket
+from unicore.hub.service.sso.models import Ticket, TicketValidationError
 
 
 _ = TranslationStringFactory(None)
@@ -62,6 +62,7 @@ class BaseView(object):
             return "ltr"
 
     def make_redirect(self, url=None, route_name=None, params={}):
+        # TODO: validate url
         cookies = filter(
             lambda t: t[0] == 'Set-Cookie',
             self.request.response.headerlist)
@@ -124,11 +125,11 @@ class CASViews(BaseView):
             try:
                 data = form.validate(data)
                 user_id = data['user_id']
-                headers = remember(self.request, user_id)
+                headers = remember(self.request, (user_id, ))
                 self.request.response.headerlist.extend(headers)
                 if service:
                     ticket = Ticket.create_ticket_from_request(
-                        self.request, user_id=user_id)
+                        self.request, user_id=user_id, primary=True)
                     return self.make_redirect(
                         service, params={'ticket': ticket.ticket})
                 return self.make_redirect(route_name='user-login')
@@ -149,7 +150,19 @@ class CASViews(BaseView):
 
         return self.make_redirect(route_name='user-login')
 
-    @view_config(route_name='user-validate', renderer='text')
+    @view_config(route_name='user-validate', renderer='json')
     def validate(self):
-        # TODO: validate ticket
-        pass
+        try:
+            # NOTE: this view's authenticated user is an app
+            # unlike the login and logout views
+            [app_id] = self.request.authenticated_userid
+            ticket = Ticket.validate(self.request)
+            # CAS 1.0 says to return 'yes\n' but this way we avoid
+            # an unnecessary request to obtain user data
+            data = ticket.user.to_dict()
+            data['app_data'] = (data['app_data'] or {}).get(app_id, {})
+
+        except (TicketValidationError, TypeError):
+            data = "no\n"
+
+        return data

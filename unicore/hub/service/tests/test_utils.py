@@ -5,7 +5,7 @@ from click.testing import CliRunner
 from mock import patch, Mock
 from pyramid.interfaces import IAuthenticationPolicy
 from pyramid.authentication import (BasicAuthAuthenticationPolicy,
-                                    AuthTktAuthenticationPolicy)
+                                    SessionAuthenticationPolicy)
 
 from unicore.hub.service import utils
 from unicore.hub.service.commands import in_app_env
@@ -27,9 +27,9 @@ class UtilsTestCase(TestCase):
         self.assertTrue(isinstance(policy, utils.PathAuthenticationPolicy))
 
         path_map = [
-            ('/sso/login', AuthTktAuthenticationPolicy),
-            ('/sso/logout', AuthTktAuthenticationPolicy),
-            ('/sso/validate', AuthTktAuthenticationPolicy),
+            ('/sso/login', SessionAuthenticationPolicy),
+            ('/sso/logout', SessionAuthenticationPolicy),
+            ('/sso/validate', BasicAuthAuthenticationPolicy),
             ('/apps', BasicAuthAuthenticationPolicy),
             ('/users', BasicAuthAuthenticationPolicy)]
 

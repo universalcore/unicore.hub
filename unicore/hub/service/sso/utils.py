@@ -1,4 +1,4 @@
-from urlparse import urlparse
+from urlparse import urlparse, urlunparse
 
 
 PROTOCOL_TO_PORT = {
@@ -18,3 +18,10 @@ def same_origin(url1, url2):
         return o1 == o2
     except (ValueError, KeyError):
         return False
+
+
+def clean_url(url):
+    """ Return only scheme, host and path
+    """
+    parts = urlparse(url)
+    return urlunparse((parts.scheme, parts.netloc, parts.path, '', '', ''))

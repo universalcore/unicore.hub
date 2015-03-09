@@ -7,7 +7,7 @@ from sqlalchemy import Column, Unicode, ForeignKey, DateTime, Boolean
 from sqlalchemy_utils import UUIDType
 
 from unicore.hub.service import Base
-from unicore.hub.service.sso.utils import same_origin
+from unicore.hub.service.sso.utils import same_origin, clean_url
 
 
 TICKET_EXPIRE = 90
@@ -19,15 +19,19 @@ TICKET_ALLOWED_CHARS = 'abcdefghijklmnopqrstuvwxyz' \
                        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 
-class InvalidTicket(Exception):
+class TicketValidationError(Exception):
     pass
 
 
-class InvalidRequest(Exception):
+class InvalidTicket(TicketValidationError):
     pass
 
 
-class InvalidService(Exception):
+class InvalidRequest(TicketValidationError):
+    pass
+
+
+class InvalidService(TicketValidationError):
     pass
 
 
@@ -63,11 +67,12 @@ class Ticket(Base):
             if 'user_id' not in attrs:
                 raise InvalidRequest('No authenticated user id provided')
 
-        ticket.service = request.GET['service']
+        ticket.service = clean_url(request.GET['service'])
         for attr, value in attrs.iteritems():
             setattr(ticket, attr, value)
 
         request.db.add(ticket)
+        request.db.flush()
         return ticket
 
     def consume(self, request):

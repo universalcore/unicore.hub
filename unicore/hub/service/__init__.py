@@ -1,7 +1,7 @@
 import logging
 
 from pyramid.authentication import (BasicAuthAuthenticationPolicy,
-                                    AuthTktAuthenticationPolicy)
+                                    SessionAuthenticationPolicy)
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid_beaker import set_cache_regions_from_settings
@@ -65,12 +65,10 @@ def main(global_config, **settings):
     basic_authn_policy = BasicAuthAuthenticationPolicy(
         check=App.authenticate,
         realm='apps')
-    ticket_authn_policy = AuthTktAuthenticationPolicy(
-        secret=settings['pyramid.secret'],
-        callback=User.verify_identifier,
-        hashalg='sha512')
+    session_authn_policy = SessionAuthenticationPolicy(
+        callback=User.verify_identifier)
     authn_policy = PathAuthenticationPolicy(
-        path_map=[(r'/sso/(login|logout|validate)', ticket_authn_policy)],
+        path_map=[(r'/sso/(login|logout)', session_authn_policy)],
         default=basic_authn_policy)
     authz_policy = ACLAuthorizationPolicy()
     config.set_authentication_policy(authn_policy)

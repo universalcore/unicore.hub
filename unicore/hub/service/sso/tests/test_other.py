@@ -22,7 +22,6 @@ class TicketModelTestCase(SSOTestCase):
         request.db = self.db
         request.authenticated_userid = (user.uuid, )
         ticket2 = Ticket.create_ticket_from_request(request)
-        self.db.flush()
 
         delattr(request, 'authenticated_userid')
         with self.assertRaises(InvalidRequest):
