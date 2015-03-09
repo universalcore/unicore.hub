@@ -56,8 +56,14 @@ class Ticket(Base):
     @classmethod
     def create_ticket_from_request(cls, request, **attrs):
         ticket = Ticket()
-        [ticket.user_id] = request.authenticated_userid
-        ticket.service = request.matchdict['service']
+
+        try:
+            [ticket.user_id] = request.authenticated_userid
+        except (TypeError, AttributeError):
+            if 'user_id' not in attrs:
+                raise InvalidRequest('No authenticated user id provided')
+
+        ticket.service = request.GET['service']
         for attr, value in attrs.iteritems():
             setattr(ticket, attr, value)
 
@@ -91,9 +97,9 @@ class Ticket(Base):
 
     @classmethod
     def validate(cls, request):
-        service = request.matchdict.get('service', None)
-        ticket_str = request.matchdict.get('ticket', None)
-        renew = bool(request.matchdict.get('renew', False))
+        service = request.GET.get('service', None)
+        ticket_str = request.GET.get('ticket', None)
+        renew = bool(request.GET.get('renew', False))
 
         if not ticket_str:
             raise InvalidTicket('No ticket string provided')

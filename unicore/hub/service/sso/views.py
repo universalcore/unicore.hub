@@ -83,9 +83,9 @@ class CASViews(BaseView):
         route_name='user-login',
         renderer='unicore.hub:service/sso/templates/login.jinja2')
     def login_get(self):
-        service = self.request.matchdict.get('service', None)
-        renew = bool(self.request.matchdict.get('renew', False))
-        gateway = bool(self.request.matchdict.get('gateway', False))
+        service = self.request.GET.get('service', None)
+        renew = bool(self.request.GET.get('renew', False))
+        gateway = bool(self.request.GET.get('gateway', False))
         schema = UserCredentials()
         form = Form(schema, buttons=('submit', ))
 
@@ -114,7 +114,7 @@ class CASViews(BaseView):
         route_name='user-login', request_method='POST',
         renderer='unicore.hub:service/sso/templates/login.jinja2')
     def login_post(self):
-        service = self.request.matchdict.get('service', None)
+        service = self.request.GET.get('service', None)
         schema = UserCredentials(validator=validate_credentials(self.request))
         form = Form(schema, buttons=('submit', ))
 
@@ -127,7 +127,8 @@ class CASViews(BaseView):
                 headers = remember(self.request, user_id)
                 self.request.response.headerlist.extend(headers)
                 if service:
-                    ticket = Ticket.create_ticket_from_request(self.request)
+                    ticket = Ticket.create_ticket_from_request(
+                        self.request, user_id=user_id)
                     return self.make_redirect(
                         service, params={'ticket': ticket.ticket})
                 return self.make_redirect(route_name='user-login')
@@ -139,7 +140,7 @@ class CASViews(BaseView):
 
     @view_config(route_name='user-logout')
     def logout(self):
-        service = self.request.matchdict.get('service', None)
+        service = self.request.GET.get('service', None)
         headers = forget(self.request)
         self.request.response.headerlist.extend(headers)
 
@@ -150,9 +151,5 @@ class CASViews(BaseView):
 
     @view_config(route_name='user-validate', renderer='text')
     def validate(self):
-        # service = self.request.matchdict.get('service', None)
-        # ticket = self.request.matchdict.get('ticket', None)
-        # renew = bool(self.request.matchdict.get('renew', False))
-
         # TODO: validate ticket
         pass

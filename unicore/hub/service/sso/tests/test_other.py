@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from mock import Mock
 
 from unicore.hub.service.sso.tests import SSOTestCase
-from unicore.hub.service.sso.models import Ticket, TICKET_RE
+from unicore.hub.service.sso.models import Ticket, TICKET_RE, InvalidRequest
 
 
 class TicketModelTestCase(SSOTestCase):
@@ -18,11 +18,16 @@ class TicketModelTestCase(SSOTestCase):
 
         request = Mock()
         request.path_info = '/sso/login?service=%s' % service
-        request.matchdict = {'service': service}
+        request.GET = {'service': service}
         request.db = self.db
         request.authenticated_userid = (user.uuid, )
         ticket2 = Ticket.create_ticket_from_request(request)
         self.db.flush()
+
+        delattr(request, 'authenticated_userid')
+        with self.assertRaises(InvalidRequest):
+            Ticket.create_ticket_from_request(request)
+        Ticket.create_ticket_from_request(request, user_id=user.uuid)
 
         for ticket in (ticket1, ticket2):
             self.assertTrue(TICKET_RE.match(ticket.ticket))
