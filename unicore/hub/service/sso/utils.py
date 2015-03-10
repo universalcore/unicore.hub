@@ -1,5 +1,7 @@
 from urlparse import urlparse, urlunparse
 
+import colander
+
 
 PROTOCOL_TO_PORT = {
     'http': 80,
@@ -26,3 +28,25 @@ def clean_url(url):
     """
     parts = urlparse(url)
     return urlunparse((parts.scheme, parts.netloc, parts.path, '', '', ''))
+
+
+@colander.deferred
+def deferred_csrf_default(node, kw):
+    request = kw.get('request')
+    if kw.get('use_existing_csrf', False):
+        csrf_token = request.session.get_csrf_token()
+    else:
+        csrf_token = request.session.new_csrf_token()
+    return csrf_token
+
+
+@colander.deferred
+def deferred_csrf_validator(node, kw):
+
+    def validator(node, value):
+        request = kw.get('request')
+        csrf_token = request.session.get_csrf_token()
+        if value != csrf_token:
+            raise ValueError('Bad CSRF token')
+
+    return validator

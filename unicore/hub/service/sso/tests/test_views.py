@@ -9,16 +9,33 @@ from mock import Mock, patch
 from unicore.hub.service.sso.models import TICKET_RE, Ticket, \
     InvalidTicket, InvalidRequest, InvalidService
 from unicore.hub.service.sso.tests import SSOTestCase
-from unicore.hub.service.sso.views import BaseView, CASViews
+from unicore.hub.service.sso.views import BaseView, CASViews, \
+    deferred_csrf_validator
 from unicore.hub.service.sso.utils import clean_url
 
 
 class CASViewsTestCase(SSOTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(CASViewsTestCase, cls).setUpClass()
+        validator = Mock()
+        validator.return_value = Mock()
+        cls.patch_csrf_validator = patch.object(
+            deferred_csrf_validator, 'wrapped', new=validator)
+        cls.patch_csrf_validator.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(CASViewsTestCase, cls).tearDownClass()
+        cls.patch_csrf_validator.stop()
+
     def test_locale(self):
         resp = self.app.get('/sso/login')
-        self.assertIn('Set-Cookie', resp.headers)
-        self.assertIn('_LOCALE_=eng_GB', resp.headers['Set-Cookie'])
+        locale_cookie = filter(
+            lambda x: x[0] == 'Set-Cookie' and '_LOCALE_=eng_GB' in x[1],
+            resp.headers.iteritems())
+        self.assertEqual(len(locale_cookie), 1)
 
         resp = self.app.get('/sso/login')
         self.assertNotIn('Set-Cookie', resp.headers)
@@ -56,6 +73,7 @@ class CASViewsTestCase(SSOTestCase):
         self.assertEqual(resp.status_int, 200)
         self.assertIn('<input type="text" name="username"', resp.body)
         self.assertIn('<input type="password" name="password"', resp.body)
+        self.assertIn('<input type="hidden" name="lt"', resp.body)
 
         # gateway request when logged out
         self.app.reset()
@@ -69,7 +87,8 @@ class CASViewsTestCase(SSOTestCase):
         resp = self.app.post('/sso/login', params={
             'username': 'foo',
             'password': 'password',
-            'submit': 'submit'})
+            'submit': 'submit',
+            'lt': 'abc'})
         self.assertEqual(resp.status_int, 302)
         self.assertEqual(
             resp.headers['Location'], 'http://localhost/sso/login')
@@ -81,7 +100,8 @@ class CASViewsTestCase(SSOTestCase):
             '/sso/login?%s' % service_qs, params={
                 'username': 'foo',
                 'password': 'password',
-                'submit': 'submit'})
+                'submit': 'submit',
+                'lt': 'abc'})
         self.assertEqual(resp.status_int, 302)
         self.assertEqual(clean_url(resp.headers['Location']), service)
         query = parse_qs(urlparse(resp.headers['Location']).query)
@@ -123,7 +143,8 @@ class CASViewsTestCase(SSOTestCase):
             '/sso/login?%s' % service_qs, params={
                 'username': 'foo',
                 'password': 'password2',
-                'submit': 'submit'})
+                'submit': 'submit',
+                'lt': 'abc'})
         self.assertEqual(resp.status_int, 200)
         self.assertIn('Username or password is incorrect', resp.body)
 
@@ -139,7 +160,8 @@ class CASViewsTestCase(SSOTestCase):
             '/sso/login?%s' % urlencode({'service': service}), params={
                 'username': 'foo',
                 'password': 'password',
-                'submit': 'submit'})
+                'submit': 'submit',
+                'lt': 'abc'})
         self.assertEqual(resp.status_int, 302)
 
         resp = self.app.get('/sso/logout')
@@ -177,7 +199,8 @@ class CASViewsTestCase(SSOTestCase):
             '/sso/login?%s' % service_qs, params={
                 'username': 'foo',
                 'password': 'password',
-                'submit': 'submit'})
+                'submit': 'submit',
+                'lt': 'abc'})
         ticket_str = urlparse(resp.headers['Location']).query
         ticket_str = parse_qs(ticket_str)['ticket'][0]
         ticket = self.db.query(Ticket) \

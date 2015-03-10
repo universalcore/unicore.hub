@@ -3,15 +3,17 @@ from urlparse import urljoin
 
 from pyramid.view import view_config, view_defaults
 from pyramid.security import forget, remember
-from pyramid.httpexceptions import HTTPFound, HTTPUnauthorized
+from pyramid.httpexceptions import HTTPFound, HTTPUnauthorized, HTTPBadRequest
 from pyramid.i18n import TranslationStringFactory, get_locale_name
 
 import colander
 from deform import Form, ValidationFailure
-from deform.widget import PasswordWidget
+from deform.widget import PasswordWidget, HiddenWidget
 
 from unicore.hub.service.models import User, App
 from unicore.hub.service.sso.models import Ticket, TicketValidationError
+from unicore.hub.service.sso.utils import deferred_csrf_default, \
+    deferred_csrf_validator
 
 
 _ = TranslationStringFactory(None)
@@ -20,6 +22,12 @@ KNOWN_RTL = set(["urd", "ara", "arc", "per", "heb", "kur", "yid"])
 
 
 class UserCredentials(colander.MappingSchema):
+    # NOTE: the name of the csrf token is 'lt' as per CAS 1.0
+    lt = colander.SchemaNode(
+        colander.String(),
+        default=deferred_csrf_default,
+        widget=HiddenWidget(),
+        validator=deferred_csrf_validator)
     username = colander.SchemaNode(
         colander.String(),
         title=_('Username'))
@@ -29,7 +37,9 @@ class UserCredentials(colander.MappingSchema):
         title=_('Password'))
 
 
-def validate_credentials(request):
+@colander.deferred
+def validate_credentials(node, kw):
+    request = kw.get('request')
 
     def validator(form, values):
         user_id = User.authenticate(
@@ -79,7 +89,6 @@ class BaseView(object):
 @view_defaults(http_cache=0, request_method='GET')
 class CASViews(BaseView):
 
-    # TODO: csrf check
     @view_config(
         route_name='user-login',
         renderer='unicore.hub:service/sso/templates/login.jinja2')
@@ -87,7 +96,7 @@ class CASViews(BaseView):
         service = self.request.GET.get('service', None)
         renew = bool(self.request.GET.get('renew', False))
         gateway = bool(self.request.GET.get('gateway', False))
-        schema = UserCredentials()
+        schema = UserCredentials().bind(request=self.request)
         form = Form(schema, buttons=('submit', ))
 
         if renew:
@@ -118,15 +127,18 @@ class CASViews(BaseView):
         route_name='user-login', request_method='POST',
         renderer='unicore.hub:service/sso/templates/login.jinja2')
     def login_post(self):
-        service = self.request.GET.get('service', None)
-        schema = UserCredentials(validator=validate_credentials(self.request))
-        form = Form(schema, buttons=('submit', ))
-
         if 'submit' in self.request.POST:
+            service = self.request.GET.get('service', None)
+            schema = UserCredentials(validator=validate_credentials) \
+                .bind(request=self.request, use_existing_csrf=True)
+            form = Form(schema, buttons=('submit', ))
             data = self.request.POST.items()
 
             try:
                 data = form.validate(data)
+                # NB: invalidate the old CSRF token
+                # CAS 1.0 requires new CSRF token per request
+                self.request.session.new_csrf_token()
                 user_id = data['user_id']
                 headers = remember(self.request, user_id)
                 self.request.response.headerlist.extend(headers)
@@ -138,9 +150,17 @@ class CASViews(BaseView):
                 return self.make_redirect(route_name='user-login')
 
             except ValidationFailure as e:
-                return {'form': e.render()}
+                # NB: invalidate the old CSRF token
+                # CAS 1.0 requires new CSRF token per request
+                return {'form': e.field.render({
+                    'lt': self.request.session.new_csrf_token()})}
 
-        return {'form': form.render()}
+            except ValueError:
+                # CSRF check failed
+                raise HTTPBadRequest
+
+        schema = UserCredentials().bind(request=self.request)
+        return {'form': Form(schema, buttons=('submit', )).render()}
 
     @view_config(
         route_name='user-logout',
