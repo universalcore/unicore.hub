@@ -107,7 +107,7 @@ class CASViews(BaseView):
                 ticket = Ticket.create_ticket_from_request(self.request)
                 return self.make_redirect(
                     service, params={'ticket': ticket.ticket})
-            return {'user': self.request.db.query(User).get(user_id)}
+            return {'user': self.request.db.query(User).get(user_id[0])}
 
         return {'form': form.render()}
 
@@ -139,16 +139,18 @@ class CASViews(BaseView):
 
         return {'form': form.render()}
 
-    @view_config(route_name='user-logout')
+    @view_config(
+        route_name='user-logout',
+        renderer='unicore.hub:service/sso/templates/logout_success.jinja2')
     def logout(self):
-        service = self.request.GET.get('service', None)
+        user_id = self.request.authenticated_userid
         headers = forget(self.request)
         self.request.response.headerlist.extend(headers)
 
-        if service:
-            return self.make_redirect(service)
+        if user_id:
+            Ticket.consume_all(user_id[0], self.request)
 
-        return self.make_redirect(route_name='user-login')
+        return {}
 
     @view_config(route_name='user-validate', renderer='json')
     def validate(self):
