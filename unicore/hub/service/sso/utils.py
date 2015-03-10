@@ -8,7 +8,8 @@ PROTOCOL_TO_PORT = {
 
 
 def same_origin(url1, url2):
-    ''' Copied from Django
+    ''' Return True if the urls have the same origin, else False.
+    Copied from Django:
     https://github.com/django/django/blob/master/django/utils/http.py#L255
     '''
     p1, p2 = urlparse(url1), urlparse(url2)

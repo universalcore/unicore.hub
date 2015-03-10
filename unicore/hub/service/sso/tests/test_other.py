@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from urllib import urlencode
 
 from mock import Mock
 
@@ -17,13 +18,13 @@ class TicketModelTestCase(SSOTestCase):
             self.db, user_id=user.uuid, service=service)
 
         request = Mock()
-        request.path_info = '/sso/login?service=%s' % service
+        request.path_info = '/sso/login?%s' % urlencode({'service': service})
         request.GET = {'service': service}
         request.db = self.db
         request.authenticated_userid = (user.uuid, )
         ticket2 = Ticket.create_ticket_from_request(request)
 
-        delattr(request, 'authenticated_userid')
+        request.authenticated_userid = None
         with self.assertRaises(InvalidRequest):
             Ticket.create_ticket_from_request(request)
         Ticket.create_ticket_from_request(request, user_id=user.uuid)

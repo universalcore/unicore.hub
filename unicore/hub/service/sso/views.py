@@ -3,14 +3,14 @@ from urlparse import urljoin
 
 from pyramid.view import view_config, view_defaults
 from pyramid.security import forget, remember
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPUnauthorized
 from pyramid.i18n import TranslationStringFactory, get_locale_name
 
 import colander
 from deform import Form, ValidationFailure
 from deform.widget import PasswordWidget
 
-from unicore.hub.service.models import User
+from unicore.hub.service.models import User, App
 from unicore.hub.service.sso.models import Ticket, TicketValidationError
 
 
@@ -93,21 +93,24 @@ class CASViews(BaseView):
         if renew:
             return {'form': form.render()}
 
-        user_id = self.request.authenticated_userid
+        try:
+            user = User.get_authenticated_object(self.request)
+        except HTTPUnauthorized:
+            user = None
 
         if gateway and service:
-            if user_id:
+            if user:
                 ticket = Ticket.create_ticket_from_request(self.request)
                 return self.make_redirect(
                     service, params={'ticket': ticket.ticket})
             return self.make_redirect(service)
 
-        if user_id:
+        if user:
             if service:
                 ticket = Ticket.create_ticket_from_request(self.request)
                 return self.make_redirect(
                     service, params={'ticket': ticket.ticket})
-            return {'user': self.request.db.query(User).get(user_id[0])}
+            return {'user': user}
 
         return {'form': form.render()}
 
@@ -125,7 +128,7 @@ class CASViews(BaseView):
             try:
                 data = form.validate(data)
                 user_id = data['user_id']
-                headers = remember(self.request, (user_id, ))
+                headers = remember(self.request, user_id)
                 self.request.response.headerlist.extend(headers)
                 if service:
                     ticket = Ticket.create_ticket_from_request(
@@ -143,12 +146,14 @@ class CASViews(BaseView):
         route_name='user-logout',
         renderer='unicore.hub:service/sso/templates/logout_success.jinja2')
     def logout(self):
-        user_id = self.request.authenticated_userid
+        try:
+            user = User.get_authenticated_object(self.request)
+            Ticket.consume_all(user, self.request)
+        except HTTPUnauthorized:
+            pass
+
         headers = forget(self.request)
         self.request.response.headerlist.extend(headers)
-
-        if user_id:
-            Ticket.consume_all(user_id[0], self.request)
 
         return {}
 
@@ -157,14 +162,14 @@ class CASViews(BaseView):
         try:
             # NOTE: this view's authenticated user is an app
             # unlike the login and logout views
-            [app_id] = self.request.authenticated_userid
+            app = App.get_authenticated_object(self.request)
             ticket = Ticket.validate(self.request)
             # CAS 1.0 says to return 'yes\n' but this way we avoid
             # an unnecessary request to obtain user data
             data = ticket.user.to_dict()
-            data['app_data'] = (data['app_data'] or {}).get(app_id, {})
+            data['app_data'] = (data['app_data'] or {}).get(app.uuid, {})
 
-        except (TicketValidationError, TypeError):
+        except (TicketValidationError, HTTPUnauthorized):
             data = "no\n"
 
         return data

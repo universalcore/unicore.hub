@@ -25,6 +25,14 @@ class UUIDMixin(object):
         else:
             self._uuid = UUID(hex=value)
 
+    @classmethod
+    def get_authenticated_object(cls, request):
+        [uuid] = (request.authenticated_userid, )
+        if uuid is None:
+            raise HTTPUnauthorized()
+
+        return request.db.query(cls).get(uuid)
+
 
 class User(Base, UUIDMixin):
     __tablename__ = 'users'
@@ -33,7 +41,7 @@ class User(Base, UUIDMixin):
     password = Column(PasswordType(schemes=['pbkdf2_sha256']))
     app_data = Column(MutableDict.as_mutable(JSONType))
 
-    tickets = relationship('Ticket', backref='user')
+    tickets = relationship('Ticket', backref='user', lazy='dynamic')
 
     @classmethod
     def authenticate(cls, username, password, request):
@@ -83,14 +91,6 @@ class App(Base, UUIDMixin):
             return [app.uuid, ] + (app.groups or [])
 
         return None
-
-    @classmethod
-    def get_authenticated_object(cls, request):
-        [uuid] = (request.authenticated_userid, )
-        if uuid is None:
-            raise HTTPUnauthorized()
-
-        return request.db.query(App).get(uuid)
 
     def to_dict(self):
         return {

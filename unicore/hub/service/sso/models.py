@@ -3,10 +3,12 @@ from datetime import datetime, timedelta
 import time
 import random
 
+from pyramid.httpexceptions import HTTPUnauthorized
 from sqlalchemy import Column, Unicode, ForeignKey, DateTime, Boolean
 from sqlalchemy_utils import UUIDType
 
 from unicore.hub.service import Base
+from unicore.hub.service.models import User
 from unicore.hub.service.sso.utils import same_origin, clean_url
 
 
@@ -62,10 +64,10 @@ class Ticket(Base):
         ticket = Ticket()
 
         try:
-            [ticket.user_id] = request.authenticated_userid
-        except (TypeError, AttributeError):
+            ticket.user = User.get_authenticated_object(request)
+        except HTTPUnauthorized:
             if 'user_id' not in attrs:
-                raise InvalidRequest('No authenticated user id provided')
+                raise InvalidRequest('No authenticated user provided')
 
         ticket.service = clean_url(request.GET['service'])
         for attr, value in attrs.iteritems():
@@ -80,12 +82,19 @@ class Ticket(Base):
         request.db.flush()
 
     @classmethod
-    def consume_all(cls, user_id, request):
+    def consume_all(cls, user, request):
         now = datetime.utcnow()
-        request.db.query(cls) \
-            .filter(cls.user_id == user_id) \
-            .filter(cls.expires > now) \
-            .update({'consumed': now})
+
+        if isinstance(user, basestring):
+            request.db.query(cls) \
+                .filter(cls.user_id == user) \
+                .filter(cls.expires > now) \
+                .update({'consumed': now})
+        else:
+            user.tickets \
+                .filter(cls.expires > now) \
+                .update({'consumed': now})
+
         request.db.flush()
 
     @property
@@ -122,7 +131,7 @@ class Ticket(Base):
         if ticket.is_consumed:
             raise InvalidTicket('Ticket %s has already been used' % ticket_str)
 
-        ticket.consume()
+        ticket.consume(request)
 
         if ticket.is_expired:
             raise InvalidTicket('Ticket %s has expired' % ticket_str)
