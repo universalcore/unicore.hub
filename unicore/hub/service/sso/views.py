@@ -100,7 +100,7 @@ class CASViews(BaseView):
         form = Form(schema, buttons=('submit', ))
 
         if renew:
-            return {'form': form.render()}
+            return {'form': form}
 
         try:
             user = User.get_authenticated_object(self.request)
@@ -121,7 +121,7 @@ class CASViews(BaseView):
                     service, params={'ticket': ticket.ticket})
             return {'user': user}
 
-        return {'form': form.render()}
+        return {'form': form}
 
     @view_config(
         route_name='user-login', request_method='POST',
@@ -152,15 +152,16 @@ class CASViews(BaseView):
             except ValidationFailure as e:
                 # NB: invalidate the old CSRF token
                 # CAS 1.0 requires new CSRF token per request
-                return {'form': e.field.render({
-                    'lt': self.request.session.new_csrf_token()})}
+                [lt_field] = filter(lambda f: f.name == 'lt', e.field.children)
+                lt_field._cstruct = self.request.session.new_csrf_token()
+                return {'form': e.field}
 
             except ValueError:
                 # CSRF check failed
                 raise HTTPBadRequest
 
         schema = UserCredentials().bind(request=self.request)
-        return {'form': Form(schema, buttons=('submit', )).render()}
+        return {'form': Form(schema, buttons=('submit', ))}
 
     @view_config(
         route_name='user-logout',

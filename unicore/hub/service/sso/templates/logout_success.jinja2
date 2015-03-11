@@ -1,12 +1,12 @@
 {% extends "base.jinja2" %}
 
-{% block title %}{{ _('Logged out | Universal Core') }}{% endblock %}
+{% block title %}{{ _('Sign Out') }} | {{ _('Universal Core') }}{% endblock %}
 
-{% block body %}
+{% block content %}
 <div>
     <p>
         {% trans login_url=request.route_url('user-login') %}
-        You have been logged out successfully. Click <a href="{{ login_url }}">here</a> to log in.
+        You have been signed out successfully. Click <a href="{{ login_url }}">here</a> to sign in.
         {% endtrans %}
     </p>
 </div>

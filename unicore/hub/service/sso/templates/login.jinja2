@@ -1,11 +1,22 @@
 {% extends "base.jinja2" %}
+{% import "form_utils.jinja2" as form_utils %}
 
-{% block title %}{{ _('Login | Universal Core') }}{% endblock %}
+{% block title %}{{ _('Sign In') }} | {{ _('Universal Core') }}{% endblock %}
 
-{% block body %}
+{% block content %}
 <div id="login-container">
+
     {% if form %}
-    {{ form|safe }}
+    <form id="login-form" method="post">
+        {{ form_utils.errors(form.error) }}
+        {{ form_utils.field(form.lt) }}
+        {{ form_utils.field(form.username) }}
+        {{ form_utils.field(form.password, label=_('4 Digit PIN')) }}
+        <div class="buttons">
+            <input name="submit" type="submit" value="{{ _('Sign In' ) }}" />
+        </div>
+    </form>
+
     {% elif user %}
     <p>
         {% trans username=user.username, logout_url=request.route_url('user-logout') %}
@@ -13,5 +24,6 @@
         {% endtrans %}
     </p>
     {% endif %}
+
 </div>
 {% endblock %}
