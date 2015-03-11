@@ -177,7 +177,7 @@ class CASViewsTestCase(SSOTestCase):
             .filter(Ticket.consumed.isnot(None))
             .count(), 11)
         # correct text is displayed
-        self.assertIn('You have been logged out successfully', resp.body)
+        self.assertIn('You have been signed out successfully', resp.body)
 
         # session is no longer authenticated
         with patch.object(CASViews, 'login_get') as mock_login_get, \
