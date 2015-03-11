@@ -48,6 +48,7 @@ def main(global_config, **settings):
     config.add_route('user-login', '/sso/login')
     config.add_route('user-logout', '/sso/logout')
     config.add_route('user-validate', '/sso/validate')
+    config.add_route('user-join', '/sso/join')
     config.scan()
 
     # sqlalchemy setup
@@ -68,7 +69,7 @@ def main(global_config, **settings):
     session_authn_policy = SessionAuthenticationPolicy(
         callback=User.verify_identifier)
     authn_policy = PathAuthenticationPolicy(
-        path_map=[(r'/sso/(login|logout)', session_authn_policy)],
+        path_map=[(r'/sso/(login|logout|join)', session_authn_policy)],
         default=basic_authn_policy)
     authz_policy = ACLAuthorizationPolicy()
     config.set_authentication_policy(authn_policy)

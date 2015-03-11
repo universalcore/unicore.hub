@@ -130,7 +130,7 @@ class CASViewsTestCase(SSOTestCase):
         # normal get without service when logged in
         resp = self.app.get('/sso/login')
         self.assertEqual(resp.status_int, 200)
-        self.assertIn('You are logged in as foo', resp.body)
+        self.assertIn('You are signed in as foo', resp.body)
 
         # login with missing fields
         self.app.reset()

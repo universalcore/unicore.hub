@@ -30,6 +30,10 @@ def clean_url(url):
     return urlunparse((parts.scheme, parts.netloc, parts.path, '', '', ''))
 
 
+class InvalidCSRFToken(ValueError):
+    pass
+
+
 @colander.deferred
 def deferred_csrf_default(node, kw):
     request = kw.get('request')
@@ -47,6 +51,6 @@ def deferred_csrf_validator(node, kw):
         request = kw.get('request')
         csrf_token = request.session.get_csrf_token()
         if value != csrf_token:
-            raise ValueError('Bad CSRF token')
+            raise InvalidCSRFToken('Bad CSRF token')
 
     return validator

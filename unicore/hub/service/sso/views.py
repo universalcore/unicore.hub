@@ -11,9 +11,11 @@ from deform import Form, ValidationFailure
 from deform.widget import PasswordWidget, HiddenWidget
 
 from unicore.hub.service.models import User, App
+from unicore.hub.service.schema import User as UserSchema
 from unicore.hub.service.sso.models import Ticket, TicketValidationError
 from unicore.hub.service.sso.utils import deferred_csrf_default, \
-    deferred_csrf_validator
+    deferred_csrf_validator, InvalidCSRFToken
+from unicore.hub.service.validators import username_validator
 
 
 _ = TranslationStringFactory(None)
@@ -35,6 +37,31 @@ class UserCredentials(colander.MappingSchema):
         colander.String(),
         widget=PasswordWidget(length=4),
         title=_('Password'))
+
+
+class UserJoin(UserSchema):
+    csrf_token = colander.SchemaNode(
+        colander.String(),
+        default=deferred_csrf_default,
+        widget=HiddenWidget(),
+        validator=deferred_csrf_validator)
+
+    @colander.deferred
+    def username_valid_and_unique(node, kw):
+        request = kw.get('request')
+
+        def validator(node, value):
+            user = request.db.query(User) \
+                .filter(User.username == value) \
+                .first()
+            if user:
+                raise colander.Invalid(node, '%r is not unique' % (value, ))
+
+        return colander.All(username_validator, validator)
+
+    username = colander.SchemaNode(
+        colander.String(),
+        validator=username_valid_and_unique)
 
 
 @colander.deferred
@@ -73,6 +100,7 @@ class BaseView(object):
 
     def make_redirect(self, url=None, route_name=None, params={}):
         # TODO: validate url
+        # TODO: preserve service, renew and gateway query params
         cookies = filter(
             lambda t: t[0] == 'Set-Cookie',
             self.request.response.headerlist)
@@ -127,41 +155,41 @@ class CASViews(BaseView):
         route_name='user-login', request_method='POST',
         renderer='unicore.hub:service/sso/templates/login.jinja2')
     def login_post(self):
-        if 'submit' in self.request.POST:
-            service = self.request.GET.get('service', None)
-            schema = UserCredentials(validator=validate_credentials) \
-                .bind(request=self.request, use_existing_csrf=True)
-            form = Form(schema, buttons=('submit', ))
-            data = self.request.POST.items()
+        if 'submit' not in self.request.POST:
+            schema = UserCredentials().bind(request=self.request)
+            return {'form': Form(schema, buttons=('submit', ))}
 
-            try:
-                data = form.validate(data)
-                # NB: invalidate the old CSRF token
-                # CAS 1.0 requires new CSRF token per request
-                self.request.session.new_csrf_token()
-                user_id = data['user_id']
-                headers = remember(self.request, user_id)
-                self.request.response.headerlist.extend(headers)
-                if service:
-                    ticket = Ticket.create_ticket_from_request(
-                        self.request, user_id=user_id, primary=True)
-                    return self.make_redirect(
-                        service, params={'ticket': ticket.ticket})
-                return self.make_redirect(route_name='user-login')
+        service = self.request.GET.get('service', None)
+        schema = UserCredentials(validator=validate_credentials) \
+            .bind(request=self.request, use_existing_csrf=True)
+        form = Form(schema, buttons=('submit', ))
+        data = self.request.POST.items()
 
-            except ValidationFailure as e:
-                # NB: invalidate the old CSRF token
-                # CAS 1.0 requires new CSRF token per request
-                [lt_field] = filter(lambda f: f.name == 'lt', e.field.children)
-                lt_field._cstruct = self.request.session.new_csrf_token()
-                return {'form': e.field}
+        try:
+            data = form.validate(data)
+            # NB: invalidate the old CSRF token
+            # CAS 1.0 requires new CSRF token per request
+            self.request.session.new_csrf_token()
+            user_id = data['user_id']
+            headers = remember(self.request, user_id)
+            self.request.response.headerlist.extend(headers)
+            if service:
+                ticket = Ticket.create_ticket_from_request(
+                    self.request, user_id=user_id, primary=True)
+                return self.make_redirect(
+                    service, params={'ticket': ticket.ticket})
+            return self.make_redirect(route_name='user-login')
 
-            except ValueError:
-                # CSRF check failed
-                raise HTTPBadRequest
+        except ValidationFailure as e:
+            # NB: invalidate the old CSRF token
+            # CAS 1.0 requires new CSRF token per request
+            [lt_field] = filter(lambda f: f.name == 'lt', e.field.children)
+            lt_field._cstruct = self.request.session.new_csrf_token()
+            return {'form': e.field}
 
-        schema = UserCredentials().bind(request=self.request)
-        return {'form': Form(schema, buttons=('submit', ))}
+        except InvalidCSRFToken:
+            # CSRF check failed
+            raise HTTPBadRequest
 
     @view_config(
         route_name='user-logout',
@@ -194,3 +222,54 @@ class CASViews(BaseView):
             data = "no\n"
 
         return data
+
+    @view_config(
+        route_name='user-join',
+        renderer='unicore.hub:service/sso/templates/join.jinja2')
+    def join_get(self):
+        schema = UserJoin().bind(request=self.request)
+        form = Form(schema, buttons=('submit', ))
+
+        return {'form': form}
+
+    @view_config(
+        route_name='user-join',
+        renderer='unicore.hub:service/sso/templates/join.jinja2',
+        request_method='POST')
+    def join_post(self):
+        if 'submit' not in self.request.POST:
+            schema = UserJoin().bind(request=self.request)
+            return {'form': Form(schema, buttons=('submit', ))}
+
+        schema = UserJoin().bind(request=self.request, use_existing_csrf=True)
+        form = Form(schema, buttons=('submit', ))
+        data = self.request.POST.items()
+
+        try:
+            data = form.validate(data)
+            # NB: invalidate the old CSRF token
+            # CAS 1.0 requires new CSRF token per request
+            self.request.session.new_csrf_token()
+            # create new user
+            user = User()
+            self.request.db.add(user)
+            del data['csrf_token']
+            for attr, value in data.iteritems():
+                setattr(user, attr, value)
+            self.request.db.flush()
+
+            headers = remember(self.request, user.uuid)
+            self.request.response.headerlist.extend(headers)
+            return self.make_redirect(route_name='user-login')
+
+        except ValidationFailure as e:
+            # NB: invalidate the old CSRF token
+            # CAS 1.0 requires new CSRF token per request
+            [token] = filter(
+                lambda f: f.name == 'csrf_token', e.field.children)
+            token._cstruct = self.request.session.new_csrf_token()
+            return {'form': e.field}
+
+        except InvalidCSRFToken:
+            # CSRF check failed
+            raise HTTPBadRequest

@@ -16,11 +16,13 @@
             <input name="submit" type="submit" value="{{ _('Sign In' ) }}" />
         </div>
     </form>
+    <p>{{ _("Don't have an account?") }}</p>
+    <a href="{{ request.route_url('user-join') }}">{{ _('Join') }}</a>
 
     {% elif user %}
     <p>
         {% trans username=user.username, logout_url=request.route_url('user-logout') %}
-        You are logged in as {{ username }}. Click <a href="{{ logout_url }}">here</a> to log out.
+        You are signed in as {{ username }}. Click <a href="{{ logout_url }}">here</a> to sign out.
         {% endtrans %}
     </p>
     {% endif %}

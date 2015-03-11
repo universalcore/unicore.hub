@@ -1,0 +1,24 @@
+{% extends "base.jinja2" %}
+{% import "form_utils.jinja2" as form_utils %}
+
+{% block title %}{{ _('Join') }} | {{ _('Universal Core') }}{% endblock %}
+
+{% block content %}
+<div id="join-container">
+
+    <h1>{{ _('Join') }}</h1>
+    <p>{{ _('You will use these details to sign in in future.') }}</p>
+    <form id="join-form" method="post">
+        {{ form_utils.errors(form.error) }}
+        {{ form_utils.field(form.csrf_token) }}
+        {{ form_utils.field(form.username, label=_('Choose a Username')) }}
+        {{ form_utils.field(form.password, label=_('Choose a 4 Digit PIN (E.g 4265)')) }}
+        <div class="buttons">
+            <input name="submit" type="submit" value="{{ _('Join' ) }}" />
+        </div>
+    </form>
+    <p>{{ _('Aready joined?') }}</p>
+    <a class="button" href="{{ request.route_url('user-login') }}">{{ _('Sign In') }}</a>
+
+</div>
+{% endblock %}
