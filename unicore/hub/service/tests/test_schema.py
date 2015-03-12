@@ -65,8 +65,8 @@ class UserSchemaTestCase(DBTestCase):
         self.db.flush()
 
         invalid_usernames = [
-            (u'foo\u001e', 'not contain control characters'),
-            (u'foo\u202b', 'not contain control characters'),
+            (u'foo\u001e', 'contains control characters'),
+            (u'foo\u202b', 'contains control characters'),
             (' foo', 'has leading space'),
             ('foo ', 'has trailing space'),
             ('hello   world', 'more than 1 space in a row'),

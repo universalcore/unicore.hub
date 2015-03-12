@@ -3,6 +3,7 @@ import re
 import colander
 
 from unicore.hub.service.models import App as AppModel, User as UserModel
+from unicore.hub.service.utils import translation_string_factory as _
 
 
 """ User schema validators
@@ -19,20 +20,26 @@ USERNAME_DISALLOWED_CHARS = re.compile(u'[%s]' % USERNAME_DISALLOWED_CHARS)
 
 def username_char_validator(node, value):
     # http://stackoverflow.com/questions/1597743/what-restrictions-should-i-impose-on-usernames
+    mapping = {'username': value}
+
     # disallow leading and trailing space
     if value[0] == ' ':
-        raise colander.Invalid(node, '%r has leading space' % (value, ))
+        raise colander.Invalid(
+            node, _('%(username)s has leading space', mapping=mapping))
     if value[-1] == ' ':
-        raise colander.Invalid(node, '%r has trailing space' % (value, ))
+        raise colander.Invalid(
+            node, _('%(username)s has trailing space', mapping=mapping))
 
     # disallow more than one space in a row
     if '  ' in value:
         raise colander.Invalid(
-            node, '%r has more than 1 space in a row' % (value, ))
+            node,
+            _('%(username)s has more than 1 space in a row', mapping=mapping))
 
     if USERNAME_DISALLOWED_CHARS.search(value):
         raise colander.Invalid(
-            node, '%r may not contain control characters' % (value, ))
+            node,
+            _('%(username)s contains control characters', mapping=mapping))
 
 
 username_length_validator = colander.Length(
@@ -48,7 +55,9 @@ def username_validator(node, kw):
             .filter(UserModel.username == value) \
             .first()
         if user:
-            raise colander.Invalid(node, '%r is not unique' % (value, ))
+            raise colander.Invalid(
+                node,
+                _('%(username)s is not unique', mapping={'username': value}))
 
     return colander.All(
         username_length_validator,
@@ -57,19 +66,22 @@ def username_validator(node, kw):
 
 
 def app_data_validator(node, value):
+
     if not isinstance(value, dict):
         raise colander.Invalid(
-            node, '%r is not a dictionary' % (value, ))
+            node, _('%(data)r is not a dictionary', mapping={'data': value}))
 
     for key in value.keys():
         if not isinstance(key, basestring) or len(key) != 32:
             raise colander.Invalid(
-                node, '%r is not a valid app UUID' % (key, ))
+                node,
+                _('%(key)r is not a valid app UUID', mapping={'key': key}))
 
     for data in value.values():
         if not isinstance(data, dict):
             raise colander.Invalid(
-                node, '%r is not a dictionary' % (data, ))
+                node,
+                _('%(data)r is not a dictionary', mapping={'data': data}))
 
 
 def pin_validator(length):
@@ -77,12 +89,16 @@ def pin_validator(length):
     def validator(node, value):
         if len(value) != length:
             raise colander.Invalid(
-                node, '%r is not %d digits long' % (value, length))
+                node,
+                _('%(pin)s is not %(length)s digits long',
+                  mapping={'pin': value, 'length': length}))
 
         non_numeric = filter(lambda ch: not ch.isdigit(), value)
         if non_numeric:
             raise colander.Invalid(
-                node, '%r is not a numeric string' % (value, ))
+                node,
+                _('%(pin)s contains non-digit characters',
+                  mapping={'pin': value}))
 
     return validator
 

@@ -4,7 +4,7 @@ from urlparse import urljoin
 from pyramid.view import view_config, view_defaults
 from pyramid.security import forget, remember
 from pyramid.httpexceptions import HTTPFound, HTTPUnauthorized, HTTPBadRequest
-from pyramid.i18n import TranslationStringFactory, get_locale_name
+from pyramid.i18n import get_locale_name
 
 import colander
 from deform import Form, ValidationFailure
@@ -12,13 +12,13 @@ from deform.widget import PasswordWidget, HiddenWidget
 
 from unicore.hub.service.models import User, App
 from unicore.hub.service.schema import User as UserSchema
-from unicore.hub.service.utils import normalize_unicode
+from unicore.hub.service.utils import (normalize_unicode,
+                                       translation_string_factory as _)
 from unicore.hub.service.sso.models import Ticket, TicketValidationError
 from unicore.hub.service.sso.utils import deferred_csrf_default, \
     deferred_csrf_validator, InvalidCSRFToken
 
 
-_ = TranslationStringFactory(None)
 # known Right to Left language codes
 KNOWN_RTL = set(["urd", "ara", "arc", "per", "heb", "kur", "yid"])
 

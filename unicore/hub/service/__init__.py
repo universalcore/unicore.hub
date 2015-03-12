@@ -4,6 +4,7 @@ from pyramid.authentication import (BasicAuthAuthenticationPolicy,
                                     SessionAuthenticationPolicy)
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
+from pyramid.i18n import default_locale_negotiator
 from pyramid_beaker import set_cache_regions_from_settings
 from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
@@ -74,5 +75,9 @@ def main(global_config, **settings):
     authz_policy = ACLAuthorizationPolicy()
     config.set_authentication_policy(authn_policy)
     config.set_authorization_policy(authz_policy)
+
+    # translation setup
+    config.add_translation_dirs('unicore.hub:service/locale/')
+    config.set_locale_negotiator(default_locale_negotiator)
 
     return config.make_wsgi_app()
