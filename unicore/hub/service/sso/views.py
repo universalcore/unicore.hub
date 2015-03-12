@@ -12,11 +12,10 @@ from deform.widget import PasswordWidget, HiddenWidget
 
 from unicore.hub.service.models import User, App
 from unicore.hub.service.schema import User as UserSchema
-from unicore.hub.service.utils import username_preparer
+from unicore.hub.service.utils import normalize_unicode
 from unicore.hub.service.sso.models import Ticket, TicketValidationError
 from unicore.hub.service.sso.utils import deferred_csrf_default, \
     deferred_csrf_validator, InvalidCSRFToken
-from unicore.hub.service.validators import username_validator
 
 
 _ = TranslationStringFactory(None)
@@ -33,7 +32,7 @@ class UserCredentials(colander.MappingSchema):
         validator=deferred_csrf_validator)
     username = colander.SchemaNode(
         colander.String(),
-        preparer=username_preparer,
+        preparer=normalize_unicode,
         title=_('Username'))
     password = colander.SchemaNode(
         colander.String(),
@@ -47,25 +46,6 @@ class UserJoin(UserSchema):
         default=deferred_csrf_default,
         widget=HiddenWidget(),
         validator=deferred_csrf_validator)
-
-    @colander.deferred
-    def username_valid_and_unique(node, kw):
-        request = kw.get('request')
-
-        def validator(node, value):
-            user = request.db.query(User) \
-                .filter(User.username == value) \
-                .first()
-            if user:
-                raise colander.Invalid(node, '%r is not unique' % (value, ))
-
-        return colander.All(
-            colander.Length(max=User.username_length),
-            username_validator, validator)
-
-    username = colander.SchemaNode(
-        colander.String(),
-        validator=username_valid_and_unique)
 
 
 @colander.deferred

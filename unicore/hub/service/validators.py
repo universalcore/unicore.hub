@@ -2,6 +2,12 @@ import re
 
 import colander
 
+from unicore.hub.service.models import App as AppModel, User as UserModel
+
+
+""" User schema validators
+"""
+
 
 # exclude control characters
 USERNAME_DISALLOWED_CHARS = u'\u0000-\u001f\u007f-\u009f'
@@ -11,25 +17,43 @@ USERNAME_DISALLOWED_CHARS += u'\u202a-\u202e'
 USERNAME_DISALLOWED_CHARS = re.compile(u'[%s]' % USERNAME_DISALLOWED_CHARS)
 
 
-def username_validator(node, value):
+def username_char_validator(node, value):
     # http://stackoverflow.com/questions/1597743/what-restrictions-should-i-impose-on-usernames
-    # must be longer than 1 character
-    if len(value) == 0:
-        raise colander.Invalid('Username must be at least 1 character long')
-
     # disallow leading and trailing space
     if value[0] == ' ':
-        raise colander.Invalid('%r has leading space' % (value, ))
+        raise colander.Invalid(node, '%r has leading space' % (value, ))
     if value[-1] == ' ':
-        raise colander.Invalid('%r has trailing space' % (value, ))
+        raise colander.Invalid(node, '%r has trailing space' % (value, ))
 
     # disallow more than one space in a row
     if '  ' in value:
-        raise colander.Invalid('%r has more than 1 space in a row' % (value, ))
+        raise colander.Invalid(
+            node, '%r has more than 1 space in a row' % (value, ))
 
     if USERNAME_DISALLOWED_CHARS.search(value):
         raise colander.Invalid(
-            '%r may not contain control characters' % (value, ))
+            node, '%r may not contain control characters' % (value, ))
+
+
+username_length_validator = colander.Length(
+    min=1, max=UserModel.username_length)
+
+
+@colander.deferred
+def username_validator(node, kw):
+    request = kw.get('request')
+
+    def username_unique_validator(node, value):
+        user = request.db.query(UserModel) \
+            .filter(UserModel.username == value) \
+            .first()
+        if user:
+            raise colander.Invalid(node, '%r is not unique' % (value, ))
+
+    return colander.All(
+        username_length_validator,
+        username_char_validator,
+        username_unique_validator)
 
 
 def app_data_validator(node, value):
@@ -61,3 +85,12 @@ def pin_validator(length):
                 node, '%r is not a numeric string' % (value, ))
 
     return validator
+
+
+""" App schema validators
+"""
+
+
+app_title_validator = colander.All(
+    colander.Length(max=AppModel.title_length))
+app_groups_validator = colander.OneOf(AppModel.all_groups)

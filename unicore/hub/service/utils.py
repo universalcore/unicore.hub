@@ -9,5 +9,7 @@ def make_password(bit_length=15):
     return base64.b64encode(os.urandom(bit_length))
 
 
-def username_preparer(value):
-    return unicodedata.normalize('nfkc', value)
+def normalize_unicode(value):
+    if isinstance(value, basestring):
+        return unicodedata.normalize('NFKC', unicode(value))
+    return value
