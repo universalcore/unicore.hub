@@ -61,7 +61,7 @@ def main(global_config, **settings):
 
     # auth setup
     from unicore.hub.service.models import App, User
-    from unicore.hub.service.utils import PathAuthenticationPolicy
+    from unicore.hub.service.authentication import PathAuthenticationPolicy
     basic_authn_policy = BasicAuthAuthenticationPolicy(
         check=App.authenticate,
         realm='apps')

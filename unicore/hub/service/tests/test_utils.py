@@ -8,6 +8,7 @@ from pyramid.authentication import (BasicAuthAuthenticationPolicy,
                                     SessionAuthenticationPolicy)
 
 from unicore.hub.service import utils
+from unicore.hub.service.authentication import PathAuthenticationPolicy
 from unicore.hub.service.commands import in_app_env
 from unicore.hub.service.models import App
 from unicore.hub.service.tests import DBTestCase, get_test_settings, make_app
@@ -24,7 +25,7 @@ class UtilsTestCase(TestCase):
         app = make_app(*get_test_settings()).app
         policy = app.registry.queryUtility(IAuthenticationPolicy)
 
-        self.assertTrue(isinstance(policy, utils.PathAuthenticationPolicy))
+        self.assertTrue(isinstance(policy, PathAuthenticationPolicy))
 
         path_map = [
             ('/sso/login', SessionAuthenticationPolicy),
