@@ -6,6 +6,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>{% block title %}{% endblock %}</title>
         <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;" />
+        <link href="{{ request.static_url('unicore.hub:service/sso/static/css/style.css') }}" rel="stylesheet" type="text/css" />
     </head>
 
     <body>
@@ -15,22 +16,21 @@
             <div class="header">
             {% block header %}
                 {% if request.authenticated_userid %}
-                <a href="{{ request.route_path('user-logout') }}">{{ _('Sign Out') }}</a>
+                <a class='align-right' href="{{ request.route_path('user-logout') }}">{{ _('Sign Out') }}</a>
                 {% else %}
-                <a href="{{ request.route_path('user-login') }}">{{ _('Sign In') }}</a>
+                <a class='align-right' href="{{ request.route_path('user-login') }}">{{ _('Sign In') }}</a>
                 {% endif %}
+                <div class="clear"></div>
             {% endblock %}
             </div>
 
             <div class="content">{% block content %}{% endblock %}</div>
 
-            <div class="footer">
+            <div class="footer text-center">
             {% block footer %}
-            <!--
                 <a href="{{ request.route_path('user-login') }}">{{ _('About') }}</a> |
                 <a href="{{ request.route_path('user-login') }}">{{ _('Contact') }}</a> |
                 <a href="{{ request.route_path('user-login') }}">{{ _('Terms') }}</a>
-            -->
             {% endblock %}
             </div>
 

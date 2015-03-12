@@ -3,12 +3,12 @@
 {% block title %}{{ _('Sign Out') }} | {{ _('Universal Core') }}{% endblock %}
 
 {% block content %}
-<div id="logout-container">
+<div id="logout-container" class="box">
 
-    <p>
+    <div>
         {{ _('You have been signed out successfully.') }}
         {% trans login_url=request.route_path('user-login') %}Click <a href="{{ login_url }}">here</a> to sign in.{% endtrans %}
-    </p>
+    </div>
 
 </div>
 {% endblock %}

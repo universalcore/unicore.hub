@@ -4,7 +4,7 @@
 {% block title %}{{ _('Sign In') }} | {{ _('Universal Core') }}{% endblock %}
 
 {% block content %}
-<div id="login-container">
+<div id="login-container" class="box">
 
     {% if form %}
     <form id="login-form" method="post">
@@ -16,14 +16,14 @@
             <input name="submit" type="submit" value="{{ _('Sign In' ) }}" />
         </div>
     </form>
-    <p>{{ _("Don't have an account?") }}</p>
-    <a href="{{ request.route_path('user-join') }}">{{ _('Join') }}</a>
+    <div class="text-center">{{ _("Don't have an account?") }}</div>
+    <a class="button" href="{{ request.route_path('user-join') }}">{{ _('Join') }}</a>
 
     {% elif user %}
-    <p>
+    <div>
         {% trans username=user.username %}You are signed in as {{ username }}.{% endtrans %}
         {% trans logout_url=request.route_path('user-logout') %}Click <a href="{{ logout_url }}">here</a> to sign out.{% endtrans %}
-    </p>
+    </div>
     {% endif %}
 
 </div>

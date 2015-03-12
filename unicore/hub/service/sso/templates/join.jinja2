@@ -4,10 +4,10 @@
 {% block title %}{{ _('Join') }} | {{ _('Universal Core') }}{% endblock %}
 
 {% block content %}
-<div id="join-container">
+<div id="join-container" class="box">
 
-    <h1>{{ _('Join') }}</h1>
-    <p>{{ _('You will use these details to sign in in future.') }}</p>
+    <h1 class="text-center">{{ _('Join') }}</h1>
+    <p class="text-center">{{ _('You will use these details to sign in in future.') }}</p>
     <form id="join-form" method="post">
         {{ form_utils.errors(form.error) }}
         {{ form_utils.field(form.csrf_token) }}
@@ -31,7 +31,7 @@
             <input name="submit" type="submit" value="{{ _('Join' ) }}" />
         </div>
     </form>
-    <p>{{ _('Aready joined?') }}</p>
+    <div class="text-center">{{ _('Aready joined?') }}</div>
     <a class="button" href="{{ request.route_path('user-login') }}">{{ _('Sign In') }}</a>
 
 </div>

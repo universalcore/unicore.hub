@@ -312,7 +312,8 @@ class CASViewsTestCase(SSOTestCase):
         resp = self.app.post('/sso/join', params=join_data)
         user = self.db.query(User).filter(User.username == 'foo').first()
         self.assertEqual(resp.status_int, 302)
-        self.assertEqual(resp.headers['Location'], 'http://localhost/sso/login')
+        self.assertEqual(
+            resp.headers['Location'], 'http://localhost/sso/login')
         self.assertTrue(user)
         self.assertEqual(user.password, '1234')
         self.assertEqual(user.app_data, {})

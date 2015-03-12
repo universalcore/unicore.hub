@@ -52,6 +52,10 @@ def main(global_config, **settings):
     config.add_route('user-join', '/sso/join')
     config.scan()
 
+    # static resources setup
+    config.add_static_view(
+        name='static', path='unicore.hub:service/sso/static')
+
     # sqlalchemy setup
     engine = engine_from_config(settings)
     config.registry.dbmaker = sessionmaker(bind=engine)
