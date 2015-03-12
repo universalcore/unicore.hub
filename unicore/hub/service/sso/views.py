@@ -97,8 +97,6 @@ class BaseView(object):
         if url:
             location = urljoin(url, '?%s' % urlencode(params))
         else:
-            print self.request.route_path(
-                route_name, _query=self.request.query_string)
             location = self.request.route_path(
                 route_name, _query=self.request.query_string)
 
