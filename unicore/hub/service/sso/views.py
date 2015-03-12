@@ -97,7 +97,10 @@ class BaseView(object):
         if url:
             location = urljoin(url, '?%s' % urlencode(params))
         else:
-            location = self.request.route_url(route_name)
+            print self.request.route_path(
+                route_name, _query=self.request.query_string)
+            location = self.request.route_path(
+                route_name, _query=self.request.query_string)
 
         resp = HTTPFound(location, headers=cookies)
         return resp

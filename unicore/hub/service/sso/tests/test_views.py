@@ -49,6 +49,12 @@ class CASViewsTestCase(SSOTestCase):
         config = setUp()
         config.add_route('user-login', '/sso/login')
         request = DummyRequest()
+        qs = {
+            'service': 'http://example.com',
+            'gateway': 'true',
+            'renew': 'false'}
+        request.query_string = qs
+        qs = urlencode(qs)
         request.tmpl_context = Mock()
         view = BaseView(request)
 
@@ -58,7 +64,7 @@ class CASViewsTestCase(SSOTestCase):
 
         request.response.headerlist.extend([('Set-Cookie', 'auth_tkt="bla"')])
         resp = view.make_redirect(route_name='user-login')
-        self.assertEqual(resp.location, 'http://example.com/sso/login')
+        self.assertEqual(resp.location, '/sso/login?%s' % qs)
         self.assertIn(('Set-Cookie', 'auth_tkt="bla"'), resp.headerlist)
 
         tearDown()
@@ -81,7 +87,7 @@ class CASViewsTestCase(SSOTestCase):
         resp = self.app.get(
             '/sso/login', params={'service': service, 'gateway': True})
         self.assertEqual(resp.status_int, 302)
-        self.assertEqual(resp.headers['Location'], service)
+        self.assertEqual(resp.location, service)
 
         # login - no service parameter
         self.app.reset()
@@ -92,7 +98,7 @@ class CASViewsTestCase(SSOTestCase):
             'lt': 'abc'})
         self.assertEqual(resp.status_int, 302)
         self.assertEqual(
-            resp.headers['Location'], 'http://localhost/sso/login')
+            resp.location, 'http://localhost/sso/login')
         self.assertIn('beaker.session.id', resp.headers.get('Set-Cookie'))
 
         # login - service parameter
@@ -104,8 +110,8 @@ class CASViewsTestCase(SSOTestCase):
                 'submit': 'submit',
                 'lt': 'abc'})
         self.assertEqual(resp.status_int, 302)
-        self.assertEqual(clean_url(resp.headers['Location']), service)
-        query = parse_qs(urlparse(resp.headers['Location']).query)
+        self.assertEqual(clean_url(resp.location), service)
+        query = parse_qs(urlparse(resp.location).query)
         self.assertIn('ticket', query)
         self.assertTrue(TICKET_RE.match(query['ticket'][0]))
 
@@ -117,15 +123,15 @@ class CASViewsTestCase(SSOTestCase):
         resp = self.app.get(
             '/sso/login', params={'service': service, 'gateway': True})
         self.assertEqual(resp.status_int, 302)
-        self.assertEqual(clean_url(resp.headers['Location']), service)
-        query = parse_qs(urlparse(resp.headers['Location']).query)
+        self.assertEqual(clean_url(resp.location), service)
+        query = parse_qs(urlparse(resp.location).query)
         self.assertIn('ticket', query)
 
         # normal get with service when logged in
         resp = self.app.get('/sso/login', params={'service': service})
         self.assertEqual(resp.status_int, 302)
-        self.assertEqual(clean_url(resp.headers['Location']), service)
-        query = parse_qs(urlparse(resp.headers['Location']).query)
+        self.assertEqual(clean_url(resp.location), service)
+        query = parse_qs(urlparse(resp.location).query)
         self.assertIn('ticket', query)
 
         # normal get without service when logged in
@@ -202,7 +208,7 @@ class CASViewsTestCase(SSOTestCase):
                 'password': 'password',
                 'submit': 'submit',
                 'lt': 'abc'})
-        ticket_str = urlparse(resp.headers['Location']).query
+        ticket_str = urlparse(resp.location).query
         ticket_str = parse_qs(ticket_str)['ticket'][0]
         ticket = self.db.query(Ticket) \
             .filter(Ticket.ticket == ticket_str) \
@@ -313,7 +319,7 @@ class CASViewsTestCase(SSOTestCase):
         user = self.db.query(User).filter(User.username == 'foo').first()
         self.assertEqual(resp.status_int, 302)
         self.assertEqual(
-            resp.headers['Location'], 'http://localhost/sso/login')
+            resp.location, 'http://localhost/sso/login')
         self.assertTrue(user)
         self.assertEqual(user.password, '1234')
         self.assertEqual(user.app_data, {})
