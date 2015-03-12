@@ -17,11 +17,12 @@
         </div>
     </form>
     <p>{{ _("Don't have an account?") }}</p>
-    <a href="{{ request.route_url('user-join') }}">{{ _('Join') }}</a>
+    <a href="{{ request.route_path('user-join') }}">{{ _('Join') }}</a>
 
     {% elif user %}
     <p>
-        {% trans username=user.username, logout_url=request.route_url('user-logout') %}You are signed in as {{ username }}. Click <a href="{{ logout_url }}">here</a> to sign out.{% endtrans %}
+        {% trans username=user.username %}You are signed in as {{ username }}.{% endtrans %}
+        {% trans logout_url=request.route_path('user-logout') %}Click <a href="{{ logout_url }}">here</a> to sign out.{% endtrans %}
     </p>
     {% endif %}
 

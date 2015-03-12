@@ -15,9 +15,9 @@
             <div class="header">
             {% block header %}
                 {% if request.authenticated_userid %}
-                <a href="{{ request.route_url('user-logout') }}">{{ _('Sign Out') }}</a>
+                <a href="{{ request.route_path('user-logout') }}">{{ _('Sign Out') }}</a>
                 {% else %}
-                <a href="{{ request.route_url('user-login') }}">{{ _('Sign In') }}</a>
+                <a href="{{ request.route_path('user-login') }}">{{ _('Sign In') }}</a>
                 {% endif %}
             {% endblock %}
             </div>
@@ -27,9 +27,9 @@
             <div class="footer">
             {% block footer %}
             <!--
-                <a href="{{ request.route_url('user-login') }}">{{ _('About') }}</a> |
-                <a href="{{ request.route_url('user-login') }}">{{ _('Contact') }}</a> |
-                <a href="{{ request.route_url('user-login') }}">{{ _('Terms') }}</a>
+                <a href="{{ request.route_path('user-login') }}">{{ _('About') }}</a> |
+                <a href="{{ request.route_path('user-login') }}">{{ _('Contact') }}</a> |
+                <a href="{{ request.route_path('user-login') }}">{{ _('Terms') }}</a>
             -->
             {% endblock %}
             </div>

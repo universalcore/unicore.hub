@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: unicore.hub 0.1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-03-12 15:26+0200\n"
+"POT-Creation-Date: 2015-03-12 18:49+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,48 +19,39 @@ msgstr ""
 "Generated-By: Babel 1.3\n"
 
 #: unicore/hub/service/validators.py:28
-#, python-format
-msgid "%(username)s has leading space"
+msgid "${username} has leading space"
 msgstr ""
 
 #: unicore/hub/service/validators.py:31
-#, python-format
-msgid "%(username)s has trailing space"
+msgid "${username} has trailing space"
 msgstr ""
 
 #: unicore/hub/service/validators.py:37
-#, python-format
-msgid "%(username)s has more than 1 space in a row"
+msgid "${username} has more than 1 space in a row"
 msgstr ""
 
 #: unicore/hub/service/validators.py:42
-#, python-format
-msgid "%(username)s contains control characters"
+msgid "${username} contains control characters"
 msgstr ""
 
 #: unicore/hub/service/validators.py:60
-#, python-format
-msgid "%(username)s is not unique"
+msgid "${username} is not unique"
 msgstr ""
 
 #: unicore/hub/service/validators.py:72 unicore/hub/service/validators.py:84
-#, python-format
-msgid "%(data)r is not a dictionary"
+msgid "${data} is not a dictionary"
 msgstr ""
 
 #: unicore/hub/service/validators.py:78
-#, python-format
-msgid "%(key)r is not a valid app UUID"
+msgid "${key} is not a valid app UUID"
 msgstr ""
 
 #: unicore/hub/service/validators.py:93
-#, python-format
-msgid "%(pin)s is not %(length)s digits long"
+msgid "${pin} is not ${length} digits long"
 msgstr ""
 
 #: unicore/hub/service/validators.py:100
-#, python-format
-msgid "%(pin)s contains non-digit characters"
+msgid "${pin} contains non-digit characters"
 msgstr ""
 
 #: unicore/hub/service/sso/views.py:36
@@ -71,7 +62,7 @@ msgstr ""
 msgid "Password"
 msgstr ""
 
-#: unicore/hub/service/sso/views.py:60
+#: unicore/hub/service/sso/views.py:65
 msgid "Username or password is incorrect"
 msgstr ""
 
@@ -81,7 +72,7 @@ msgid "Sign Out"
 msgstr ""
 
 #: unicore/hub/service/sso/templates/base.jinja2:20
-#: unicore/hub/service/sso/templates/join.jinja2:21
+#: unicore/hub/service/sso/templates/join.jinja2:35
 #: unicore/hub/service/sso/templates/login.jinja2:4
 #: unicore/hub/service/sso/templates/login.jinja2:16
 msgid "Sign In"
@@ -101,7 +92,7 @@ msgstr ""
 
 #: unicore/hub/service/sso/templates/join.jinja2:4
 #: unicore/hub/service/sso/templates/join.jinja2:9
-#: unicore/hub/service/sso/templates/join.jinja2:17
+#: unicore/hub/service/sso/templates/join.jinja2:31
 #: unicore/hub/service/sso/templates/login.jinja2:20
 msgid "Join"
 msgstr ""
@@ -116,15 +107,27 @@ msgstr ""
 msgid "You will use these details to sign in in future."
 msgstr ""
 
-#: unicore/hub/service/sso/templates/join.jinja2:14
+#: unicore/hub/service/sso/templates/join.jinja2:17
 msgid "Choose a Username"
 msgstr ""
 
-#: unicore/hub/service/sso/templates/join.jinja2:15
+#: unicore/hub/service/sso/templates/join.jinja2:21
+#, python-format
+msgid ""
+"%(username)s is already taken. Not you? Please choose a different "
+"username."
+msgstr ""
+
+#: unicore/hub/service/sso/templates/join.jinja2:22
+#, python-format
+msgid "Is this you? <a href=\"%(login_url)s\">Sign in here.</a>"
+msgstr ""
+
+#: unicore/hub/service/sso/templates/join.jinja2:29
 msgid "Choose a 4 Digit PIN (E.g 4265)"
 msgstr ""
 
-#: unicore/hub/service/sso/templates/join.jinja2:20
+#: unicore/hub/service/sso/templates/join.jinja2:34
 msgid "Aready joined?"
 msgstr ""
 
@@ -138,15 +141,20 @@ msgstr ""
 
 #: unicore/hub/service/sso/templates/login.jinja2:24
 #, python-format
-msgid ""
-"You are signed in as %(username)s. Click <a "
-"href=\"%(logout_url)s\">here</a> to sign out."
+msgid "You are signed in as %(username)s."
+msgstr ""
+
+#: unicore/hub/service/sso/templates/login.jinja2:25
+#, python-format
+msgid "Click <a href=\"%(logout_url)s\">here</a> to sign out."
 msgstr ""
 
 #: unicore/hub/service/sso/templates/logout_success.jinja2:9
+msgid "You have been signed out successfully."
+msgstr ""
+
+#: unicore/hub/service/sso/templates/logout_success.jinja2:10
 #, python-format
-msgid ""
-"You have been signed out successfully. Click <a "
-"href=\"%(login_url)s\">here</a> to sign in."
+msgid "Click <a href=\"%(login_url)s\">here</a> to sign in."
 msgstr ""
 

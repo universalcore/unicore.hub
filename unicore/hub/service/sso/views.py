@@ -167,8 +167,7 @@ class CASViews(BaseView):
         except ValidationFailure as e:
             # NB: invalidate the old CSRF token
             # CAS 1.0 requires new CSRF token per request
-            [lt_field] = filter(lambda f: f.name == 'lt', e.field.children)
-            lt_field._cstruct = self.request.session.new_csrf_token()
+            e.field['lt']._cstruct = self.request.session.new_csrf_token()
             return {'form': e.field}
 
         except InvalidCSRFToken:
@@ -249,9 +248,8 @@ class CASViews(BaseView):
         except ValidationFailure as e:
             # NB: invalidate the old CSRF token
             # CAS 1.0 requires new CSRF token per request
-            [token] = filter(
-                lambda f: f.name == 'csrf_token', e.field.children)
-            token._cstruct = self.request.session.new_csrf_token()
+            e.field['csrf_token']._cstruct = (
+                self.request.session.new_csrf_token())
             return {'form': e.field}
 
         except InvalidCSRFToken:
