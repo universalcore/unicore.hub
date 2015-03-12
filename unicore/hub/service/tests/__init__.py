@@ -77,7 +77,7 @@ class DBTestCase(BaseTestCase):
         cls.transaction_context = patch(
             'unicore.hub.service.sessionmaker',
             new=sessionmaker_in_transaction)
-        cls.transaction_context.__enter__()
+        cls.transaction_context.start()
 
         # set up app
         working_dir, config_file_path, settings = get_test_settings()
@@ -99,7 +99,7 @@ class DBTestCase(BaseTestCase):
     def tearDownClass(cls):
         alembic_command.downgrade(cls.alembic_config, 'base')
         cls.connection.close()
-        cls.transaction_context.__exit__(None, None, None)
+        cls.transaction_context.stop()
 
     def setUp(self):
         self.transaction = self.__class__.connection.begin()

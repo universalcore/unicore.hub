@@ -1,0 +1,17 @@
+{% extends "base.jinja2" %}
+
+{% block title %}{{ _('Login | Universal Core') }}{% endblock %}
+
+{% block body %}
+<div id="login-container">
+    {% if form %}
+    {{ form|safe }}
+    {% elif user %}
+    <p>
+        {% trans username=user.username, logout_url=request.route_url('user-logout') %}
+        You are logged in as {{ username }}. Click <a href="{{ logout_url }}">here</a> to log out.
+        {% endtrans %}
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -27,14 +27,14 @@ class AuthTestCase(DBTestCase):
             return session
 
         cls.db_patch = patch('unicore.hub.service.db', new=db)
-        cls.db_patch.__enter__()
+        cls.db_patch.start()
 
         super(AuthTestCase, cls).setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         super(AuthTestCase, cls).tearDownClass()
-        cls.db_patch.__exit__(None, None, None)
+        cls.db_patch.stop()
 
     def _api_request(self, path, credentials, method, extra):
         if credentials:

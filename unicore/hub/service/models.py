@@ -2,6 +2,7 @@ from uuid import uuid4, UUID
 
 from pyramid.httpexceptions import HTTPUnauthorized
 from sqlalchemy import Column, Unicode
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy_utils import PasswordType, JSONType, ScalarListType, UUIDType
 
@@ -24,6 +25,14 @@ class UUIDMixin(object):
         else:
             self._uuid = UUID(hex=value)
 
+    @classmethod
+    def get_authenticated_object(cls, request):
+        [uuid] = (request.authenticated_userid, )
+        if uuid is None:
+            raise HTTPUnauthorized()
+
+        return request.db.query(cls).get(uuid)
+
 
 class User(Base, UUIDMixin):
     __tablename__ = 'users'
@@ -32,6 +41,8 @@ class User(Base, UUIDMixin):
     password = Column(PasswordType(schemes=['pbkdf2_sha256']))
     app_data = Column(MutableDict.as_mutable(JSONType))
 
+    tickets = relationship('Ticket', backref='user', lazy='dynamic')
+
     @classmethod
     def authenticate(cls, username, password, request):
         user = request.db.query(cls) \
@@ -39,6 +50,15 @@ class User(Base, UUIDMixin):
             .first()
 
         if user is not None and user.password == password:
+            return (user.uuid, )
+
+        return None
+
+    @classmethod
+    def verify_identifier(cls, uuid, request):
+        user = request.db.query(cls).get(uuid)
+
+        if user is not None:
             return (user.uuid, )
 
         return None
@@ -71,14 +91,6 @@ class App(Base, UUIDMixin):
             return [app.uuid, ] + (app.groups or [])
 
         return None
-
-    @classmethod
-    def get_authenticated_object(cls, request):
-        [uuid] = (request.authenticated_userid, )
-        if uuid is None:
-            raise HTTPUnauthorized()
-
-        return request.db.query(App).get(uuid)
 
     def to_dict(self):
         return {

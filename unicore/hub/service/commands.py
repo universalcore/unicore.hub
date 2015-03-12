@@ -36,6 +36,6 @@ def create_app(ctx, group, title):
     click.echo('')
     click.echo(
         "App '%s' has been created and assigned to %r" % (title, group))
-    click.echo("App identifier is '%s'" % app.slug)
+    click.echo("App identifier is '%s'" % app.uuid)
     click.echo("App password is '%s'" % password)
     click.echo('')
