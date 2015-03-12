@@ -25,21 +25,21 @@ def username_char_validator(node, value):
     # disallow leading and trailing space
     if value[0] == ' ':
         raise colander.Invalid(
-            node, _('%(username)s has leading space', mapping=mapping))
+            node, _('${username} has leading space', mapping=mapping))
     if value[-1] == ' ':
         raise colander.Invalid(
-            node, _('%(username)s has trailing space', mapping=mapping))
+            node, _('${username} has trailing space', mapping=mapping))
 
     # disallow more than one space in a row
     if '  ' in value:
         raise colander.Invalid(
             node,
-            _('%(username)s has more than 1 space in a row', mapping=mapping))
+            _('${username} has more than 1 space in a row', mapping=mapping))
 
     if USERNAME_DISALLOWED_CHARS.search(value):
         raise colander.Invalid(
             node,
-            _('%(username)s contains control characters', mapping=mapping))
+            _('${username} contains control characters', mapping=mapping))
 
 
 username_length_validator = colander.Length(
@@ -57,7 +57,7 @@ def username_validator(node, kw):
         if user:
             raise colander.Invalid(
                 node,
-                _('%(username)s is not unique', mapping={'username': value}))
+                _('${username} is not unique', mapping={'username': value}))
 
     return colander.All(
         username_length_validator,
@@ -69,19 +69,19 @@ def app_data_validator(node, value):
 
     if not isinstance(value, dict):
         raise colander.Invalid(
-            node, _('%(data)r is not a dictionary', mapping={'data': value}))
+            node, _('${data} is not a dictionary', mapping={'data': value}))
 
     for key in value.keys():
         if not isinstance(key, basestring) or len(key) != 32:
             raise colander.Invalid(
                 node,
-                _('%(key)r is not a valid app UUID', mapping={'key': key}))
+                _('${key} is not a valid app UUID', mapping={'key': key}))
 
     for data in value.values():
         if not isinstance(data, dict):
             raise colander.Invalid(
                 node,
-                _('%(data)r is not a dictionary', mapping={'data': data}))
+                _('${data} is not a dictionary', mapping={'data': data}))
 
 
 def pin_validator(length):
@@ -90,14 +90,14 @@ def pin_validator(length):
         if len(value) != length:
             raise colander.Invalid(
                 node,
-                _('%(pin)s is not %(length)s digits long',
+                _('${pin} is not ${length} digits long',
                   mapping={'pin': value, 'length': length}))
 
         non_numeric = filter(lambda ch: not ch.isdigit(), value)
         if non_numeric:
             raise colander.Invalid(
                 node,
-                _('%(pin)s contains non-digit characters',
+                _('${pin} contains non-digit characters',
                   mapping={'pin': value}))
 
     return validator
