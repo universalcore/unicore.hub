@@ -16,9 +16,9 @@
             <div class="header">
             {% block header %}
                 {% if request.authenticated_userid %}
-                <a class='align-right' href="{{ request.route_path('user-logout') }}">{{ _('Sign Out') }}</a>
+                <a class='align-right' href="{{ request.route_path('user-logout', _query=request.query_string) }}">{{ _('Sign Out') }}</a>
                 {% else %}
-                <a class='align-right' href="{{ request.route_path('user-login') }}">{{ _('Sign In') }}</a>
+                <a class='align-right' href="{{ request.route_path('user-login', _query=request.query_string) }}">{{ _('Sign In') }}</a>
                 {% endif %}
                 <div class="clear"></div>
             {% endblock %}
@@ -28,9 +28,9 @@
 
             <div class="footer text-center">
             {% block footer %}
-                <a href="{{ request.route_path('user-login') }}">{{ _('About') }}</a> |
-                <a href="{{ request.route_path('user-login') }}">{{ _('Contact') }}</a> |
-                <a href="{{ request.route_path('user-login') }}">{{ _('Terms') }}</a>
+                <a href="{{ request.route_path('user-login', _query=request.query_string) }}">{{ _('About') }}</a> |
+                <a href="{{ request.route_path('user-login', _query=request.query_string) }}">{{ _('Contact') }}</a> |
+                <a href="{{ request.route_path('user-login', _query=request.query_string) }}">{{ _('Terms') }}</a>
             {% endblock %}
             </div>
 
