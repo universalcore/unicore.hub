@@ -35,21 +35,21 @@ class PathAuthenticationPolicy(object):
         return self._path_info_cache[path]
 
     def authenticated_userid(self, request):
-        return self.get_active_policy(request) \
-            .authenticated_userid(request)
+        return self.get_active_policy(
+            request).authenticated_userid(request)
 
     def unauthenticated_userid(self, request):
-        return self.get_active_policy(request) \
-            .unauthenticated_userid(request)
+        return self.get_active_policy(
+            request).unauthenticated_userid(request)
 
     def effective_principals(self, request):
-        return self.get_active_policy(request) \
-            .effective_principals(request)
+        return self.get_active_policy(
+            request).effective_principals(request)
 
     def remember(self, request, principal, **kw):
-        return self.get_active_policy(request) \
-            .remember(request, principal, **kw)
+        return self.get_active_policy(
+            request).remember(request, principal, **kw)
 
     def forget(self, request):
-        return self.get_active_policy(request) \
-            .forget(request)
+        return self.get_active_policy(
+            request).forget(request)
