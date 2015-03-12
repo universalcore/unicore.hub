@@ -37,7 +37,9 @@ class UUIDMixin(object):
 class User(Base, UUIDMixin):
     __tablename__ = 'users'
 
-    username = Column(Unicode(255), unique=True)
+    username_length = 255
+
+    username = Column(Unicode(username_length), unique=True)
     password = Column(PasswordType(schemes=['pbkdf2_sha256']))
     app_data = Column(MutableDict.as_mutable(JSONType))
 
@@ -79,7 +81,9 @@ class App(Base, UUIDMixin):
         'group:apps_manager',  # Can create, view and edit apps
     )
 
-    title = Column(Unicode(255), nullable=False)
+    title_length = 255
+
+    title = Column(Unicode(title_length), nullable=False)
     password = Column(PasswordType(schemes=['pbkdf2_sha256']), nullable=False)
     groups = Column(ScalarListType())
 
