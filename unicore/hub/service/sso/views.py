@@ -12,6 +12,7 @@ from deform.widget import PasswordWidget, HiddenWidget
 
 from unicore.hub.service.models import User, App
 from unicore.hub.service.schema import User as UserSchema
+from unicore.hub.service.validators import pin_validator
 from unicore.hub.service.utils import (normalize_unicode,
                                        translation_string_factory as _)
 from unicore.hub.service.sso.models import Ticket, TicketValidationError
@@ -46,6 +47,10 @@ class UserJoin(UserSchema):
         default=deferred_csrf_default,
         widget=HiddenWidget(),
         validator=deferred_csrf_validator)
+    password = colander.SchemaNode(
+        colander.String(),
+        widget=PasswordWidget(length=4),
+        validator=pin_validator(length=4))
 
 
 @colander.deferred

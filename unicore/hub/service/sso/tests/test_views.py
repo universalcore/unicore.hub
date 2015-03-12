@@ -6,6 +6,7 @@ from pyramid.testing import DummyRequest, setUp, tearDown
 
 from mock import Mock, patch
 
+from unicore.hub.service.models import User
 from unicore.hub.service.sso.models import TICKET_RE, Ticket, \
     InvalidTicket, InvalidRequest, InvalidService
 from unicore.hub.service.sso.tests import SSOTestCase
@@ -291,3 +292,40 @@ class CASViewsTestCase(SSOTestCase):
         assertValidateRaises(
             request_consumed, InvalidTicket, 'has already been used')
         assertValidateRaises(request_expired, InvalidTicket, 'has expired')
+
+    def test_join(self):
+        join_data = {
+            'username': 'foo',
+            'password': '1234',
+            'csrf_token': 'abc',
+            'submit': 'submit'
+        }
+
+        # normal get request to join view
+        resp = self.app.get('/sso/join')
+        self.assertEqual(resp.status_int, 200)
+        self.assertIn('<input type="text" name="username"', resp.body)
+        self.assertIn('<input type="password" name="password"', resp.body)
+        self.assertIn('<input type="hidden" name="csrf_token"', resp.body)
+
+        # sign a user up
+        resp = self.app.post('/sso/join', params=join_data)
+        user = self.db.query(User).filter(User.username == 'foo').first()
+        self.assertEqual(resp.status_int, 302)
+        self.assertEqual(resp.headers['Location'], 'http://localhost/sso/login')
+        self.assertTrue(user)
+        self.assertEqual(user.password, '1234')
+        self.assertEqual(user.app_data, {})
+
+        # check that same username cannot sign up again
+        resp = self.app.post('/sso/join', params=join_data)
+        self.assertEqual(resp.status_int, 200)
+        self.assertIn('foo is already taken', resp.body)
+        self.assertIn('Please choose a different username', resp.body)
+
+        # try to sign up user with otherwise invalid data
+        join_data = join_data.copy()
+        join_data['password'] = 'abcd'
+        resp = self.app.post('/sso/join', params=join_data)
+        self.assertEqual(resp.status_int, 200)
+        self.assertIn('contains non-digit characters', resp.body)
