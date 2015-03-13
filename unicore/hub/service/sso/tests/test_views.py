@@ -54,7 +54,6 @@ class CASViewsTestCase(SSOTestCase):
             'gateway': 'true',
             'renew': 'false'}
         request.query_string = qs
-        qs = urlencode(qs)
         request.tmpl_context = Mock()
         view = BaseView(request)
 
@@ -64,7 +63,7 @@ class CASViewsTestCase(SSOTestCase):
 
         request.response.headerlist.extend([('Set-Cookie', 'auth_tkt="bla"')])
         resp = view.make_redirect(route_name='user-login')
-        self.assertEqual(resp.location, '/sso/login?%s' % qs)
+        self.assertEqual(resp.location, '/sso/login?%s' % urlencode(qs))
         self.assertIn(('Set-Cookie', 'auth_tkt="bla"'), resp.headerlist)
 
         tearDown()

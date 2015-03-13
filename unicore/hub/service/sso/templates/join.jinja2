@@ -19,7 +19,7 @@
             {% if form.username.error and 'not unique' in ''.join(form.username.errormsg) %}
             <div class="error">
             {% trans username=form.username._cstruct %}{{ username }} is already taken. Not you? Please choose a different username.{% endtrans %}<br/><br/>
-            {% trans login_url=request.route_path('user-login', _query=request.query_string) %}Is this you? <a href="{{ login_url }}">Sign in here.</a>{% endtrans %}
+            {% trans login_url='user-login'|route_path(_query=request.query_string) %}Is this you? <a href="{{ login_url }}">Sign in here.</a>{% endtrans %}
             </div>
             {% else %}
             {{ form_utils.errors(form.username.error) }}
@@ -32,7 +32,7 @@
         </div>
     </form>
     <div class="text-center">{{ _('Aready joined?') }}</div>
-    <a class="button" href="{{ request.route_path('user-login', _query=request.query_string) }}">{{ _('Sign In') }}</a>
+    <a class="button" href="{{ 'user-login'|route_path(_query=request.query_string) }}">{{ _('Sign In') }}</a>
 
 </div>
 {% endblock %}
