@@ -27,11 +27,7 @@
             <div class="content">{% block content %}{% endblock %}</div>
 
             <div class="footer text-center">
-            {% block footer %}
-                <a href="{{ 'user-login'|route_path(_query=request.query_string) }}">{{ _('About') }}</a> |
-                <a href="{{ 'user-login'|route_path(_query=request.query_string) }}">{{ _('Contact') }}</a> |
-                <a href="{{ 'user-login'|route_path(_query=request.query_string) }}">{{ _('Terms') }}</a>
-            {% endblock %}
+            {% block footer %}{% endblock %}
             </div>
 
         {% endblock %}
