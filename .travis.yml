@@ -1,12 +1,14 @@
 language: python
 python:
   - "2.7"
+addons:
+  postgresql: "9.3"  # NB for JSON type
+before_script:
+  - psql -c 'create database unicore_hub_test;' -U postgres
 install:
   - pip install -r requirements-dev.txt --use-wheel
   - pip install -e . --use-wheel
 script:
-  - find ./unicore/hub -name '*.py' -not -path '*/alembic/*' | xargs pep8
-  - find ./unicore/hub -name '*.py' -not -path '*/alembic/*' | xargs pyflakes
   - ./run_tests.sh
 after_success:
   - coveralls
