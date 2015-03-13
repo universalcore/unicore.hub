@@ -4,6 +4,7 @@ from pyramid.authentication import (BasicAuthAuthenticationPolicy,
                                     SessionAuthenticationPolicy)
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
+from pyramid.i18n import default_locale_negotiator
 from pyramid_beaker import set_cache_regions_from_settings
 from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
@@ -48,7 +49,12 @@ def main(global_config, **settings):
     config.add_route('user-login', '/sso/login')
     config.add_route('user-logout', '/sso/logout')
     config.add_route('user-validate', '/sso/validate')
+    config.add_route('user-join', '/sso/join')
     config.scan()
+
+    # static resources setup
+    config.add_static_view(
+        name='static', path='unicore.hub:service/sso/static')
 
     # sqlalchemy setup
     engine = engine_from_config(settings)
@@ -68,10 +74,14 @@ def main(global_config, **settings):
     session_authn_policy = SessionAuthenticationPolicy(
         callback=User.verify_identifier)
     authn_policy = PathAuthenticationPolicy(
-        path_map=[(r'/sso/(login|logout)', session_authn_policy)],
+        path_map=[(r'/sso/(login|logout|join)', session_authn_policy)],
         default=basic_authn_policy)
     authz_policy = ACLAuthorizationPolicy()
     config.set_authentication_policy(authn_policy)
     config.set_authorization_policy(authz_policy)
+
+    # translation setup
+    config.add_translation_dirs('unicore.hub:service/locale/')
+    config.set_locale_negotiator(default_locale_negotiator)
 
     return config.make_wsgi_app()

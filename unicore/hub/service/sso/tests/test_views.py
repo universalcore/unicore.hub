@@ -6,6 +6,7 @@ from pyramid.testing import DummyRequest, setUp, tearDown
 
 from mock import Mock, patch
 
+from unicore.hub.service.models import User
 from unicore.hub.service.sso.models import TICKET_RE, Ticket, \
     InvalidTicket, InvalidRequest, InvalidService
 from unicore.hub.service.sso.tests import SSOTestCase
@@ -48,6 +49,11 @@ class CASViewsTestCase(SSOTestCase):
         config = setUp()
         config.add_route('user-login', '/sso/login')
         request = DummyRequest()
+        qs = {
+            'service': 'http://example.com',
+            'gateway': 'true',
+            'renew': 'false'}
+        request.query_string = qs
         request.tmpl_context = Mock()
         view = BaseView(request)
 
@@ -57,7 +63,7 @@ class CASViewsTestCase(SSOTestCase):
 
         request.response.headerlist.extend([('Set-Cookie', 'auth_tkt="bla"')])
         resp = view.make_redirect(route_name='user-login')
-        self.assertEqual(resp.location, 'http://example.com/sso/login')
+        self.assertEqual(resp.location, '/sso/login?%s' % urlencode(qs))
         self.assertIn(('Set-Cookie', 'auth_tkt="bla"'), resp.headerlist)
 
         tearDown()
@@ -80,7 +86,7 @@ class CASViewsTestCase(SSOTestCase):
         resp = self.app.get(
             '/sso/login', params={'service': service, 'gateway': True})
         self.assertEqual(resp.status_int, 302)
-        self.assertEqual(resp.headers['Location'], service)
+        self.assertEqual(resp.location, service)
 
         # login - no service parameter
         self.app.reset()
@@ -91,7 +97,7 @@ class CASViewsTestCase(SSOTestCase):
             'lt': 'abc'})
         self.assertEqual(resp.status_int, 302)
         self.assertEqual(
-            resp.headers['Location'], 'http://localhost/sso/login')
+            resp.location, 'http://localhost/sso/login')
         self.assertIn('beaker.session.id', resp.headers.get('Set-Cookie'))
 
         # login - service parameter
@@ -103,8 +109,8 @@ class CASViewsTestCase(SSOTestCase):
                 'submit': 'submit',
                 'lt': 'abc'})
         self.assertEqual(resp.status_int, 302)
-        self.assertEqual(clean_url(resp.headers['Location']), service)
-        query = parse_qs(urlparse(resp.headers['Location']).query)
+        self.assertEqual(clean_url(resp.location), service)
+        query = parse_qs(urlparse(resp.location).query)
         self.assertIn('ticket', query)
         self.assertTrue(TICKET_RE.match(query['ticket'][0]))
 
@@ -116,21 +122,21 @@ class CASViewsTestCase(SSOTestCase):
         resp = self.app.get(
             '/sso/login', params={'service': service, 'gateway': True})
         self.assertEqual(resp.status_int, 302)
-        self.assertEqual(clean_url(resp.headers['Location']), service)
-        query = parse_qs(urlparse(resp.headers['Location']).query)
+        self.assertEqual(clean_url(resp.location), service)
+        query = parse_qs(urlparse(resp.location).query)
         self.assertIn('ticket', query)
 
         # normal get with service when logged in
         resp = self.app.get('/sso/login', params={'service': service})
         self.assertEqual(resp.status_int, 302)
-        self.assertEqual(clean_url(resp.headers['Location']), service)
-        query = parse_qs(urlparse(resp.headers['Location']).query)
+        self.assertEqual(clean_url(resp.location), service)
+        query = parse_qs(urlparse(resp.location).query)
         self.assertIn('ticket', query)
 
         # normal get without service when logged in
         resp = self.app.get('/sso/login')
         self.assertEqual(resp.status_int, 200)
-        self.assertIn('You are logged in as foo', resp.body)
+        self.assertIn('You are signed in as foo', resp.body)
 
         # login with missing fields
         self.app.reset()
@@ -177,7 +183,7 @@ class CASViewsTestCase(SSOTestCase):
             .filter(Ticket.consumed.isnot(None))
             .count(), 11)
         # correct text is displayed
-        self.assertIn('You have been logged out successfully', resp.body)
+        self.assertIn('You have been signed out successfully', resp.body)
 
         # session is no longer authenticated
         with patch.object(CASViews, 'login_get') as mock_login_get, \
@@ -201,7 +207,7 @@ class CASViewsTestCase(SSOTestCase):
                 'password': 'password',
                 'submit': 'submit',
                 'lt': 'abc'})
-        ticket_str = urlparse(resp.headers['Location']).query
+        ticket_str = urlparse(resp.location).query
         ticket_str = parse_qs(ticket_str)['ticket'][0]
         ticket = self.db.query(Ticket) \
             .filter(Ticket.ticket == ticket_str) \
@@ -291,3 +297,41 @@ class CASViewsTestCase(SSOTestCase):
         assertValidateRaises(
             request_consumed, InvalidTicket, 'has already been used')
         assertValidateRaises(request_expired, InvalidTicket, 'has expired')
+
+    def test_join(self):
+        join_data = {
+            'username': 'foo',
+            'password': '1234',
+            'csrf_token': 'abc',
+            'submit': 'submit'
+        }
+
+        # normal get request to join view
+        resp = self.app.get('/sso/join')
+        self.assertEqual(resp.status_int, 200)
+        self.assertIn('<input type="text" name="username"', resp.body)
+        self.assertIn('<input type="password" name="password"', resp.body)
+        self.assertIn('<input type="hidden" name="csrf_token"', resp.body)
+
+        # sign a user up
+        resp = self.app.post('/sso/join', params=join_data)
+        user = self.db.query(User).filter(User.username == 'foo').first()
+        self.assertEqual(resp.status_int, 302)
+        self.assertEqual(
+            resp.location, 'http://localhost/sso/login')
+        self.assertTrue(user)
+        self.assertEqual(user.password, '1234')
+        self.assertEqual(user.app_data, {})
+
+        # check that same username cannot sign up again
+        resp = self.app.post('/sso/join', params=join_data)
+        self.assertEqual(resp.status_int, 200)
+        self.assertIn('foo is already taken', resp.body)
+        self.assertIn('Please choose a different username', resp.body)
+
+        # try to sign up user with otherwise invalid data
+        join_data = join_data.copy()
+        join_data['password'] = 'abcd'
+        resp = self.app.post('/sso/join', params=join_data)
+        self.assertEqual(resp.status_int, 200)
+        self.assertIn('contains non-digit characters', resp.body)

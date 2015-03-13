@@ -1,0 +1,38 @@
+{% extends "base.jinja2" %}
+{% import "form_utils.jinja2" as form_utils %}
+
+{% block title %}{{ _('Join') }} | {{ _('Universal Core') }}{% endblock %}
+
+{% block content %}
+<div id="join-container" class="box">
+
+    <h1 class="text-center">{{ _('Join') }}</h1>
+    <p class="text-center">{{ _('You will use these details to sign in in future.') }}</p>
+    <form id="join-form" method="post">
+        {{ form_utils.errors(form.error) }}
+        {{ form_utils.field(form.csrf_token) }}
+
+        {# Need to customize the uniqueness error message. #}
+        <div class="field">
+            <label for="{{ form.username.id }}">{{ _('Choose a Username') }}</label>
+            {{ form.username.render()|safe }}
+            {% if form.username.error and 'not unique' in ''.join(form.username.errormsg) %}
+            <div class="error">
+            {% trans username=form.username._cstruct %}{{ username }} is already taken. Not you? Please choose a different username.{% endtrans %}<br/><br/>
+            {% trans login_url='user-login'|route_path(_query=request.query_string) %}Is this you? <a href="{{ login_url }}">Sign in here.</a>{% endtrans %}
+            </div>
+            {% else %}
+            {{ form_utils.errors(form.username.error) }}
+            {% endif %}
+        </div>
+
+        {{ form_utils.field(form.password, label=_('Choose a 4 Digit PIN (E.g 4265)')) }}
+        <div class="buttons">
+            <input name="submit" type="submit" value="{{ _('Join' ) }}" />
+        </div>
+    </form>
+    <div class="text-center">{{ _('Aready joined?') }}</div>
+    <a class="button" href="{{ 'user-login'|route_path(_query=request.query_string) }}">{{ _('Sign In') }}</a>
+
+</div>
+{% endblock %}

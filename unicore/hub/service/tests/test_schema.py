@@ -2,7 +2,9 @@ from unittest import TestCase
 from uuid import uuid4
 
 import colander
+from mock import Mock
 
+from unicore.hub.service.tests import DBTestCase
 from unicore.hub.service.schema import (User as UserSchema,
                                         App as AppSchema)
 
@@ -16,11 +18,12 @@ MINIMAL_APP_DATA = {
 }
 
 
-class UserSchemaTestCase(TestCase):
+class UserSchemaTestCase(DBTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.schema = UserSchema()
+    def setUp(self):
+        super(UserSchemaTestCase, self).setUp()
+        request = Mock(db=self.db)
+        self.schema = UserSchema().bind(request=request)
 
     def test_field_existence(self):
         for field in MINIMAL_USER_DATA.keys():
@@ -57,6 +60,27 @@ class UserSchemaTestCase(TestCase):
         user_data['password'] = '1234'
         self.schema.deserialize(user_data)
 
+    def test_username_validation(self):
+        self.create_user(self.db, username='foo', password='password')
+        self.db.flush()
+
+        invalid_usernames = [
+            (u'foo\u001e', 'contains control characters'),
+            (u'foo\u202b', 'contains control characters'),
+            (' foo', 'has leading space'),
+            ('foo ', 'has trailing space'),
+            ('hello   world', 'more than 1 space in a row'),
+            ('foo', 'is not unique'),
+            ('', 'Required'),
+            ('a' * 256, 'Longer than maximum')
+        ]
+
+        user_data = MINIMAL_USER_DATA.copy()
+        for invalid_username, msg in invalid_usernames:
+            user_data['username'] = invalid_username
+            with self.assertRaisesRegexp(colander.Invalid, msg):
+                self.schema.deserialize(user_data)
+
 
 class AppSchemaTestCase(TestCase):
 
@@ -83,3 +107,9 @@ class AppSchemaTestCase(TestCase):
         for invalid in (['groups:apps_manager', 'something_else'], [124]):
             with self.assertRaises(colander.Invalid):
                 self.schema.deserialize({'groups': invalid})
+
+    def test_title_validation(self):
+        app_data = MINIMAL_APP_DATA.copy()
+        app_data['title'] = 'a' * 256
+        with self.assertRaisesRegexp(colander.Invalid, 'Longer than maximum'):
+            self.schema.deserialize(app_data)

@@ -1,17 +1,30 @@
 {% extends "base.jinja2" %}
+{% import "form_utils.jinja2" as form_utils %}
 
-{% block title %}{{ _('Login | Universal Core') }}{% endblock %}
+{% block title %}{{ _('Sign In') }} | {{ _('Universal Core') }}{% endblock %}
 
-{% block body %}
-<div id="login-container">
+{% block content %}
+<div id="login-container" class="box">
+
     {% if form %}
-    {{ form|safe }}
+    <form id="login-form" method="post">
+        {{ form_utils.errors(form.error) }}
+        {{ form_utils.field(form.lt) }}
+        {{ form_utils.field(form.username) }}
+        {{ form_utils.field(form.password, label=_('4 Digit PIN')) }}
+        <div class="buttons">
+            <input name="submit" type="submit" value="{{ _('Sign In' ) }}" />
+        </div>
+    </form>
+    <div class="text-center">{{ _("Don't have an account?") }}</div>
+    <a class="button" href="{{ 'user-join'|route_path(_query=request.query_string) }}">{{ _('Join') }}</a>
+
     {% elif user %}
-    <p>
-        {% trans username=user.username, logout_url=request.route_url('user-logout') %}
-        You are logged in as {{ username }}. Click <a href="{{ logout_url }}">here</a> to log out.
-        {% endtrans %}
-    </p>
+    <div>
+        {% trans username=user.username %}You are signed in as {{ username }}.{% endtrans %}
+        {% trans logout_url='user-logout'|route_path(_query=request.query_string) %}Click <a href="{{ logout_url }}">here</a> to sign out.{% endtrans %}
+    </div>
     {% endif %}
+
 </div>
 {% endblock %}

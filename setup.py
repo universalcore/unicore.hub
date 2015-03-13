@@ -38,4 +38,8 @@ setup(name='unicore.hub',
       main = unicore.hub.service:main
       [console_scripts]
       hubservice=unicore.hub.service.commands:in_app_env
-      """)
+      """,
+      message_extractors={'.': [
+          ('**.py', 'python', None),
+          ('**.jinja2', 'jinja2', None),
+      ]})
