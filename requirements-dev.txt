@@ -1,5 +1,4 @@
 coveralls
 pytest
 pytest-cov
-pep8
-pyflakes
+flake8

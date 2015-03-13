@@ -5,8 +5,6 @@ install:
   - pip install -r requirements-dev.txt --use-wheel
   - pip install -e . --use-wheel
 script:
-  - find ./unicore/hub -name '*.py' -not -path '*/alembic/*' | xargs pep8
-  - find ./unicore/hub -name '*.py' -not -path '*/alembic/*' | xargs pyflakes
   - ./run_tests.sh
 after_success:
   - coveralls
