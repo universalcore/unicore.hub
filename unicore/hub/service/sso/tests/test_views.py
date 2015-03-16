@@ -53,13 +53,14 @@ class CASViewsTestCase(SSOTestCase):
             'service': 'http://example.com',
             'gateway': 'true',
             'renew': 'false'}
-        request.query_string = qs
+        request.query_string = urlencode(qs)
         request.tmpl_context = Mock()
         view = BaseView(request)
 
         self.assertEqual(view.make_redirect(
-            'http://domain.com/', params={'param1': '1'}).location,
-            'http://domain.com/?param1=1')
+            'http://domain.com/?param1=foo',
+            params={'param2': 'bar'}).location,
+            'http://domain.com/?param1=foo&param2=bar')
 
         request.response.headerlist.extend([('Set-Cookie', 'auth_tkt="bla"')])
         resp = view.make_redirect(route_name='user-login')

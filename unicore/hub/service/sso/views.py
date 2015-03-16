@@ -1,5 +1,5 @@
 from urllib import urlencode
-from urlparse import urljoin
+from urlparse import urljoin, urlparse, parse_qsl, urlunparse
 
 from pyramid.view import view_config, view_defaults
 from pyramid.security import forget, remember
@@ -89,16 +89,21 @@ class BaseView(object):
 
     def make_redirect(self, url=None, route_name=None, params={}):
         # TODO: validate url
-        # TODO: preserve service, renew and gateway query params
         cookies = filter(
             lambda t: t[0] == 'Set-Cookie',
             self.request.response.headerlist)
 
         if url:
-            location = urljoin(url, '?%s' % urlencode(params))
+            parts = urlparse(url)
+            params_in_url = parse_qsl(parts.query)
+            params_in_url.extend(params.items())
+            location = urlunparse(
+                parts[:3] + ('', urlencode(params_in_url), ''))
         else:
+            params_in_url = parse_qsl(self.request.query_string)
+            params_in_url.extend(params.items())
             location = self.request.route_path(
-                route_name, _query=self.request.query_string)
+                route_name, _query=params_in_url)
 
         resp = HTTPFound(location, headers=cookies)
         return resp
