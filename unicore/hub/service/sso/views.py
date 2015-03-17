@@ -1,5 +1,5 @@
 from urllib import urlencode
-from urlparse import urljoin, urlparse, parse_qsl, urlunparse
+from urlparse import urlparse, parse_qsl, urlunparse
 
 from pyramid.view import view_config, view_defaults
 from pyramid.security import forget, remember
