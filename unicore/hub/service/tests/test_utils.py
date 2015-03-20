@@ -19,7 +19,12 @@ class UtilsTestCase(TestCase):
     def test_make_password(self):
         for l in range(1, 20):
             password = utils.make_password(bit_length=l)
-            self.assertTrue(len(password) > l)
+            self.assertGreaterEqual(len(password), l)
+
+    def test_make_key(self):
+        for i in range(10):
+            key = utils.make_key()
+            self.assertGreaterEqual(len(key), 40)
 
     def test_active_authentication_policy(self):
         app = make_app(*get_test_settings()).app
