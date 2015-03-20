@@ -1,12 +1,14 @@
 from uuid import uuid4, UUID
 
 from pyramid.httpexceptions import HTTPUnauthorized
-from sqlalchemy import Column, Unicode
+from sqlalchemy import Column, Unicode, DateTime, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy_utils import PasswordType, JSONType, ScalarListType, UUIDType
+from sqlalchemy_utils import (PasswordType, JSONType, ScalarListType, UUIDType,
+                              URLType)
 
 from unicore.hub.service import Base
+from unicore.hub.service import utils
 
 
 class UUIDMixin(object):
@@ -42,6 +44,7 @@ class User(Base, UUIDMixin):
     username = Column(Unicode(username_length), unique=True)
     password = Column(PasswordType(schemes=['pbkdf2_sha256']))
     app_data = Column(MutableDict.as_mutable(JSONType))
+    created = Column(DateTime(), default=func.now(), nullable=False)
 
     tickets = relationship('Ticket', backref='user', lazy='dynamic')
 
@@ -84,8 +87,12 @@ class App(Base, UUIDMixin):
     title_length = 255
 
     title = Column(Unicode(title_length), nullable=False)
-    password = Column(PasswordType(schemes=['pbkdf2_sha256']), nullable=False)
+    key = Column(Unicode(128), default=utils.make_key, nullable=False)
+    url = Column(URLType())
     groups = Column(ScalarListType())
+    created = Column(DateTime(), default=func.now(), nullable=False)
+
+    keys = relationship('AppKey', backref='app', lazy='dynamic')
 
     @classmethod
     def authenticate(cls, uuid, password, request):
@@ -99,6 +106,8 @@ class App(Base, UUIDMixin):
     def to_dict(self):
         return {
             'uuid': self.uuid,
+            'key': self.key,
+            'url': self.url,
             'title': self.title,
             'groups': self.groups
         }
