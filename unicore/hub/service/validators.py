@@ -110,3 +110,4 @@ def pin_validator(length):
 app_title_validator = colander.All(
     colander.Length(max=AppModel.title_length))
 app_groups_validator = colander.OneOf(AppModel.all_groups)
+app_url_validator = colander.url

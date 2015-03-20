@@ -74,18 +74,19 @@ class CommandTestCase(DBTestCase):
             **default_kwargs)
 
     def test_create_app_command(self):
-        result = self.invoke_app_env_command('create_app', ['Foo'])
+        result = self.invoke_app_env_command(
+            'create_app', ['Foo', '--url', 'www.example.com'])
         output_re = \
             r"App '[^']+' has been created and assigned to \(.*\)\n" \
             r"App identifier is '\w{32}'\n" \
-            r"App password is '.{20}'"
+            r"App key is '.{40}'"
 
         self.assertEqual(result.exit_code, 0)
         self.assertTrue(re.search(output_re, result.output))
         app = self.db.query(App).filter(App.title == 'Foo').first()
         self.assertTrue(app)
         self.assertNotIn(None, app.to_dict().values())
-        self.assertTrue(app.password)
+        self.assertTrue(app.key)
 
         result = self.invoke_app_env_command(
             'create_app', ['Foo2', '--group', 'group:apps_manager'])
@@ -99,3 +100,8 @@ class CommandTestCase(DBTestCase):
             'create_app', ['Foo', '--group', 'group_does_not_exist'])
         self.assertNotEqual(result.exit_code, 0)
         self.assertIn('Invalid value for "--group"', result.output)
+
+        result = self.invoke_app_env_command(
+            'create_app', ['Foo', '--url', 'not_a_url'])
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn('Invalid value for url', result.output)

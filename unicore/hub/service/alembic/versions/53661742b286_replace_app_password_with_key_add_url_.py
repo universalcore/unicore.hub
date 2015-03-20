@@ -12,6 +12,8 @@ down_revision = '5e5b6527827'
 branch_labels = None
 depends_on = None
 
+import os
+import base64
 import hmac
 import uuid
 from hashlib import sha1
@@ -22,14 +24,22 @@ import sqlalchemy_utils
 from sqlalchemy.sql import table, column
 
 
-app_helper = table(
+app_helper_key = table(
     'apps',
     column('uuid', sqlalchemy_utils.UUIDType(binary=False)),
     column('key', sa.Unicode()))
+app_helper_password = table(
+    'apps',
+    column('uuid', sqlalchemy_utils.UUIDType(binary=False)),
+    column('password', sqlalchemy_utils.types.password.PasswordType(schemes=['pbkdf2_sha256'])))
 
 
 def make_key():
     return hmac.new(uuid.uuid4().bytes, digestmod=sha1).hexdigest()
+
+
+def make_password(bit_length=15):
+    return base64.b64encode(os.urandom(bit_length))
 
 
 def upgrade():
@@ -38,14 +48,15 @@ def upgrade():
     op.add_column('apps', sa.Column('key', sa.Unicode(length=128), nullable=False, server_default=''))
     op.add_column('apps', sa.Column('url', sqlalchemy_utils.types.url.URLType(), nullable=True))
     op.add_column('users', sa.Column('created', sa.DateTime(), nullable=False, server_default=sa.func.now()))
+    op.drop_column('apps', 'password')
     ### end Alembic commands ###
 
     connection = op.get_bind()
     # generates a key for existing apps
-    for app in connection.execute(app_helper.select()):
+    for app in connection.execute(app_helper_key.select()):
         connection.execute(
-            app_helper.update()
-            .where(app_helper.c.uuid == app.uuid)
+            app_helper_key.update()
+            .where(app_helper_key.c.uuid == app.uuid)
             .values(key=make_key()))
 
 
@@ -55,4 +66,13 @@ def downgrade():
     op.drop_column('apps', 'url')
     op.drop_column('apps', 'key')
     op.drop_column('apps', 'created')
+    op.add_column('apps', sa.Column('password', sqlalchemy_utils.types.password.PasswordType(max_length=1094), nullable=False, server_default=''))
     ### end Alembic commands ###
+
+    connection = op.get_bind()
+    # generates a password for existing apps
+    for app in connection.execute(app_helper_password.select()):
+        connection.execute(
+            app_helper_password.update()
+            .where(app_helper_password.c.uuid == app.uuid)
+            .values(password=make_password(bit_length=15)))

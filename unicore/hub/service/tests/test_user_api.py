@@ -5,7 +5,7 @@ from unicore.hub.service.tests import DBTestCase
 class UserApiTestCase(DBTestCase):
     minimal_app_attrs = {
         'title': 'title',
-        'password': 'password'
+        'key': 'key'
     }
 
     def test_get(self):
@@ -18,7 +18,7 @@ class UserApiTestCase(DBTestCase):
         # no data for app
         resp = self.app.get(
             '/users/%s' % user.uuid,
-            headers=self.get_basic_auth_header(app.uuid, 'password'))
+            headers=self.get_basic_auth_header(app.uuid, 'key'))
         self.assertEqual(resp.status_int, 200)
         self.assertEqual(resp.json, {})
 
@@ -29,7 +29,7 @@ class UserApiTestCase(DBTestCase):
         # with data
         resp = self.app.get(
             '/users/%s' % user.uuid,
-            headers=self.get_basic_auth_header(app.uuid, 'password'))
+            headers=self.get_basic_auth_header(app.uuid, 'key'))
         self.assertEqual(resp.status_int, 200)
         self.assertEqual(resp.json, app_data[app.uuid])
 
@@ -43,7 +43,7 @@ class UserApiTestCase(DBTestCase):
         resp = self.app.post_json(
             '/users/%s' % user.uuid,
             params=app_data,
-            headers=self.get_basic_auth_header(app.uuid, 'password'))
+            headers=self.get_basic_auth_header(app.uuid, 'key'))
         self.db.expire_all()
         user = self.db.query(User).get(user.uuid)
         self.assertEqual(resp.status_int, 200)
@@ -54,7 +54,7 @@ class UserApiTestCase(DBTestCase):
         resp = self.app.post_json(
             '/users/%s' % user.uuid,
             params=app_data,
-            headers=self.get_basic_auth_header(app.uuid, 'password'))
+            headers=self.get_basic_auth_header(app.uuid, 'key'))
         self.db.expire_all()
         user = self.db.query(User).get(user.uuid)
         self.assertEqual(resp.status_int, 200)

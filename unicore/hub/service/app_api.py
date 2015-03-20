@@ -42,15 +42,10 @@ class AppResource(object):
         for attr, value in valid_data.iteritems():
             setattr(app, attr, value)
 
-        password = utils.make_password(bit_length=15)
-        app.password = password
-        self.request.db.flush()  # assigns primary key
+        self.request.db.flush()  # assigns primary key & key
 
-        new_data = app.to_dict()
-        # the password cannot be retrieved after creation
-        new_data['password'] = password
         self.request.response.status_int = 201
-        return new_data
+        return app.to_dict()
 
     @view(renderer='json')
     def get(self):
@@ -84,24 +79,20 @@ class AppResource(object):
         return app.to_dict()
 
 
-app_password_reset = Service(
-    name='apps-password-reset',
-    path='/apps/{uuid}/reset_password',
+app_key_reset = Service(
+    name='apps-key-reset',
+    path='/apps/{uuid}/reset_key',
     description='This service can be used by admin apps to '
-                'reset an app\'s password')
+                'reset an app\'s key')
 
 
-@app_password_reset.put(renderer='json')
-def reset_password(request):
+@app_key_reset.put(renderer='json')
+def reset_key(request):
     App.get_authenticated_object(request)
     require_principal(
         request, ['group:apps_manager', request.matchdict['uuid']])
 
     app = get_app_object(request)
-    password = utils.make_password(bit_length=15)
-    app.password = password
+    app.key = utils.make_key()
 
-    new_data = app.to_dict()
-    # the password cannot be retrieved after creation
-    new_data['password'] = password
-    return new_data
+    return app.to_dict()

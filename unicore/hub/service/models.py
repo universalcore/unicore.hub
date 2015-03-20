@@ -92,13 +92,11 @@ class App(Base, UUIDMixin):
     groups = Column(ScalarListType())
     created = Column(DateTime(), default=func.now(), nullable=False)
 
-    keys = relationship('AppKey', backref='app', lazy='dynamic')
-
     @classmethod
-    def authenticate(cls, uuid, password, request):
+    def authenticate(cls, uuid, key, request):
         app = request.db.query(cls).get(uuid)
 
-        if app is not None and app.password == password:
+        if app is not None and app.key == key:
             return [app.uuid, ] + (app.groups or [])
 
         return None

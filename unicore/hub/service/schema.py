@@ -28,4 +28,8 @@ class App(colander.MappingSchema):
     title = colander.SchemaNode(
         colander.String(),
         validator=vld.app_title_validator)
+    url = colander.SchemaNode(
+        colander.String(),
+        validator=vld.app_url_validator,
+        missing=None)
     groups = Groups(missing=[])

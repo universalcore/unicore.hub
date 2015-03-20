@@ -113,3 +113,9 @@ class AppSchemaTestCase(TestCase):
         app_data['title'] = 'a' * 256
         with self.assertRaisesRegexp(colander.Invalid, 'Longer than maximum'):
             self.schema.deserialize(app_data)
+
+    def test_url_validation(self):
+        app_data = MINIMAL_APP_DATA.copy()
+        app_data['url'] = 'thisisnotaurl'
+        with self.assertRaisesRegexp(colander.Invalid, 'Must be a URL'):
+            self.schema.deserialize(app_data)

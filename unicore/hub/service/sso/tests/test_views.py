@@ -195,10 +195,10 @@ class CASViewsTestCase(SSOTestCase):
             self.assertNotIn('auth.userid', mock_init.call_args[0][0].session)
 
     def test_validate(self):
-        app = self.create_app(self.db, title='Foo', password='password')
+        app = self.create_app(self.db, title='Foo', key='key')
         user = self.create_user(self.db, username='foo', password='password')
         self.db.flush()
-        auth_header = self.get_basic_auth_header(app.uuid, 'password')
+        auth_header = self.get_basic_auth_header(app.uuid, 'key')
         service = 'http://example.com'
         service_qs = urlencode({'service': service})
 
