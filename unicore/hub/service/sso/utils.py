@@ -1,12 +1,16 @@
+from uuid import uuid4
 from urlparse import urlparse, urlunparse
 
 import colander
+
+from unicore.google.tasks import pageview
 
 
 PROTOCOL_TO_PORT = {
     'http': 80,
     'https': 443,
 }
+ONE_YEAR = 31556952
 
 
 def same_origin(url1, url2):
@@ -54,3 +58,26 @@ def deferred_csrf_validator(node, kw):
             raise InvalidCSRFToken('Bad CSRF token')
 
     return validator
+
+
+def track_ga_pageview(request):
+    profile_id = request.registry.settings.get('ga.profile_id')
+    if not profile_id:
+        return
+
+    client_id = request.cookies.get('ga_client_id', uuid4().hex)
+    request.response.set_cookie(
+        'ga_client_id', value=client_id, max_age=ONE_YEAR)
+
+    data = {
+        'path': request.path,
+        'uip': request.remote_addr,
+        'dr': request.referer or '',
+        'dh': request.domain,
+        'user_agent': request.user_agent,
+        'ul': unicode(request.accept_language)}
+
+    if request.authenticated_userid:
+        [data['uid']] = request.authenticated_userid
+
+    pageview.delay(profile_id, client_id, data)
