@@ -20,16 +20,30 @@ class CASViewsTestCase(SSOTestCase):
     @classmethod
     def setUpClass(cls):
         super(CASViewsTestCase, cls).setUpClass()
+
+        # mock csrf check
         validator = Mock()
         validator.return_value = Mock()
         cls.patch_csrf_validator = patch.object(
             deferred_csrf_validator, 'wrapped', new=validator)
         cls.patch_csrf_validator.start()
 
+        # mock ga pageview tracking
+        cls.mock_track_ga_pageview = Mock()
+        cls.patch_ga_tracking = patch(
+            'unicore.hub.service.sso.views.track_ga_pageview',
+            new=cls.mock_track_ga_pageview)
+        cls.patch_ga_tracking.start()
+
     @classmethod
     def tearDownClass(cls):
         super(CASViewsTestCase, cls).tearDownClass()
         cls.patch_csrf_validator.stop()
+        cls.patch_ga_tracking.stop()
+
+    def setUp(self):
+        super(CASViewsTestCase, self).setUp()
+        self.mock_track_ga_pageview.reset_mock()
 
     def test_locale(self):
         resp = self.app.get('/sso/login')
@@ -81,6 +95,8 @@ class CASViewsTestCase(SSOTestCase):
         self.assertIn('<input type="text" name="username"', resp.body)
         self.assertIn('<input type="password" name="password"', resp.body)
         self.assertIn('<input type="hidden" name="lt"', resp.body)
+        # check that pageview is tracked
+        self.assertEqual(self.mock_track_ga_pageview.call_count, 1)
 
         # gateway request when logged out
         self.app.reset()
@@ -185,6 +201,8 @@ class CASViewsTestCase(SSOTestCase):
             .count(), 11)
         # correct text is displayed
         self.assertIn('You have been signed out successfully', resp.body)
+        # pageview is tracked
+        self.assertEqual(self.mock_track_ga_pageview.call_count, 1)
 
         # session is no longer authenticated
         with patch.object(CASViews, 'login_get') as mock_login_get, \
@@ -313,6 +331,8 @@ class CASViewsTestCase(SSOTestCase):
         self.assertIn('<input type="text" name="username"', resp.body)
         self.assertIn('<input type="password" name="password"', resp.body)
         self.assertIn('<input type="hidden" name="csrf_token"', resp.body)
+        # check that pageview is tracked
+        self.assertEqual(self.mock_track_ga_pageview.call_count, 1)
 
         # sign a user up
         resp = self.app.post('/sso/join', params=join_data)
