@@ -18,7 +18,8 @@ Base = declarative_base()
 includes = [
     'cornice',
     'pyramid_jinja2',
-    'pyramid_beaker'
+    'pyramid_beaker',
+    'pyramid_celery'
 ]
 
 
