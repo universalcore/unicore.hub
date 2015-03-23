@@ -1,9 +1,10 @@
 from pyramid.paster import bootstrap
 
 import click
+import colander
 
 from unicore.hub.service.models import App
-from unicore.hub.service.utils import make_password
+from unicore.hub.service.schema import App as AppSchema
 
 
 @click.group()
@@ -19,23 +20,33 @@ def in_app_env(ctx, ini_file_path):
 @click.option('--group', multiple=True,
               type=click.Choice(App.all_groups),
               help='a permission group to add')
+@click.option('--url', default=None,
+              help='the app\'s url, if it has one')
 @click.argument('title')
 @click.pass_context
-def create_app(ctx, group, title):
+def create_app(ctx, group, url, title):
     session = ctx.obj['env']['request'].db
 
     app = App()
     session.add(app)
-    app.title = title
-    app.groups = group
 
-    password = make_password(bit_length=15)
-    app.password = password
+    try:
+        data = AppSchema().deserialize({
+            'title': title,
+            'url': url,
+            'groups': group})
+        for key, value in data.iteritems():
+            setattr(app, key, value)
+    except colander.Invalid as e:
+        first_error = e.children[0]
+        raise click.BadParameter(
+            '\n'.join(first_error.messages()),
+            param_hint=first_error.node.name)
 
     session.commit()
     click.echo('')
     click.echo(
         "App '%s' has been created and assigned to %r" % (title, group))
     click.echo("App identifier is '%s'" % app.uuid)
-    click.echo("App password is '%s'" % password)
+    click.echo("App key is '%s'" % app.key)
     click.echo('')
