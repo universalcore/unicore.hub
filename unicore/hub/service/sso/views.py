@@ -17,7 +17,7 @@ from unicore.hub.service.utils import (normalize_unicode,
                                        translation_string_factory as _)
 from unicore.hub.service.sso.models import Ticket, TicketValidationError
 from unicore.hub.service.sso.utils import deferred_csrf_default, \
-    deferred_csrf_validator, InvalidCSRFToken
+    deferred_csrf_validator, InvalidCSRFToken, track_ga_pageview
 
 
 # known Right to Left language codes
@@ -116,6 +116,8 @@ class CASViews(BaseView):
         route_name='user-login',
         renderer='unicore.hub:service/sso/templates/login.jinja2')
     def login_get(self):
+        track_ga_pageview(self.request)
+
         service = self.request.GET.get('service', None)
         renew = bool(self.request.GET.get('renew', False))
         gateway = bool(self.request.GET.get('gateway', False))
@@ -189,6 +191,8 @@ class CASViews(BaseView):
         route_name='user-logout',
         renderer='unicore.hub:service/sso/templates/logout_success.jinja2')
     def logout(self):
+        track_ga_pageview(self.request)
+
         try:
             user = User.get_authenticated_object(self.request)
             Ticket.consume_all(user, self.request)
@@ -221,6 +225,8 @@ class CASViews(BaseView):
         route_name='user-join',
         renderer='unicore.hub:service/sso/templates/join.jinja2')
     def join_get(self):
+        track_ga_pageview(self.request)
+
         schema = UserJoin().bind(request=self.request)
         form = Form(schema, buttons=('submit', ))
 
